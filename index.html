@@ -72,6 +72,26 @@
     </div>
   </div>
 
+  <!-- Transfer Modal -->
+<div id="transferModal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
+  <div class="bg-white text-black p-6 rounded w-80">
+    <h3 class="text-lg font-bold mb-2">Transfer</h3>
+    <p class="text-sm">Move funds from Balance to Credit</p>
+    <input type="number" id="transferAmount" placeholder="Enter Amount" class="w-full border p-2 mt-2 mb-4" />
+    <button onclick="submitTransfer()" class="w-full bg-yellow-500 text-black p-2 rounded">Transfer</button>
+    <button onclick="closeModal('transferModal')" class="mt-2 text-sm text-gray-600 w-full">Cancel</button>
+  </div>
+</div>
+
+  <!-- General Feedback Modal -->
+<div id="feedbackModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
+  <div class="bg-white text-black p-6 rounded w-80 text-center">
+    <h3 class="text-lg font-bold mb-2" id="modalTitle">Title</h3>
+    <p class="text-sm" id="modalMessage">Message</p>
+    <button onclick="closeModal('feedbackModal')" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded">OK</button>
+  </div>
+</div>
+
   <!-- Message Modal -->
   <div id="messageModal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
     <div class="bg-white text-black p-4 rounded w-72 text-center">
@@ -226,5 +246,45 @@
 
     window.addEventListener("load", init);
   </script>
+  <script>
+function openTransferModal() {
+  document.getElementById("transferModal").classList.remove("hidden");
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.add("hidden");
+}
+
+function showModal(title = "Notice", message = "") {
+  document.getElementById("modalTitle").innerText = title || "Notification";
+  document.getElementById("modalMessage").innerText = message || "Something happened.";
+  document.getElementById("feedbackModal").classList.remove("hidden");
+}
+
+function submitTransfer() {
+  const amount = parseFloat(document.getElementById("transferAmount").value);
+  let balance = parseFloat(localStorage.getItem("balance") || 0);
+  let credit = parseInt(localStorage.getItem("credit") || 0);
+
+  if (isNaN(amount) || amount <= 0) {
+    showModal("Invalid Input", "Please enter a valid amount.");
+    return;
+  }
+
+  if (amount > balance) {
+    showModal("Insufficient Balance", "You do not have enough balance to transfer this amount.");
+    return;
+  }
+
+  balance -= amount;
+  credit += Math.floor(amount);
+  localStorage.setItem("balance", balance);
+  localStorage.setItem("credit", credit);
+  updateDisplay();
+  closeModal("transferModal");
+  showModal("Transfer Successful", "Your funds have been converted to credit.");
+}
+</script>
+
 </body>
 </html>
