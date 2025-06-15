@@ -128,7 +128,7 @@
 </div>
 
 <script>
-  // Example user list
+  // Populate Users
   const exampleUsers = [
     { name: "Lena, 23", country: "Kenya", img: "user1.jpg" },
     { name: "Samuel, 29", country: "Nigeria", img: "user2.jpg" },
@@ -151,8 +151,7 @@
         <div class="text-sm text-gray-400">${user.country}</div>
         <div class="mt-2 flex items-center space-x-2">
           <textarea rows="1" placeholder="Type message..." oninput="growTextArea(this)" class="w-full p-2 text-sm rounded text-black bg-white"></textarea>
-
-         <button onclick="sendMessage(this)" class="text-blue-500 text-xl">➤</button>
+          <button onclick="sendMessage(this)" class="text-blue-500 text-xl">➤</button>
         </div>
       </div>`;
     userList.appendChild(div);
@@ -164,14 +163,14 @@
   }
 
   function sendMessage(btn) {
-    const credit = parseInt(localStorage.getItem("credit")) || 0;
-    if (credit < 1) return showModal("Insufficient credit. Deposit to message.");
+    const credit = parseFloat(localStorage.getItem("credit")) || 0;
+    if (credit < 1) return showMessage("Notice", "Insufficient credit. Deposit to message.");
     const msg = btn.previousElementSibling.value.trim();
     if (!msg) return;
     btn.previousElementSibling.value = "";
-    localStorage.setItem("credit", credit - 1);
-    document.getElementById("credit").innerText = credit - 1;
-    showModal("Message sent!");
+    localStorage.setItem("credit", (credit - 1).toFixed(2));
+    updateDisplayedValues();
+    showMessage("Success", "Message sent!");
   }
 
   function openProfileModal() {
@@ -179,90 +178,55 @@
   }
 
   function openDepositModal() {
+    closeAllModals();
     document.getElementById("depositModal").classList.remove("hidden");
   }
 
   function openWithdrawModal() {
+    closeAllModals();
     document.getElementById("withdrawModal").classList.remove("hidden");
   }
 
+  function openTransferModal() {
+    closeAllModals();
+    document.getElementById("transferModal").classList.remove("hidden");
+  }
+
   function closeAllModals() {
-    document.querySelectorAll(".modal-bg").forEach(el => el.classList.add("hidden"));
+    document.querySelectorAll(".modal-bg").forEach(modal => modal.classList.add("hidden"));
   }
 
   function processDeposit() {
     const code = document.getElementById("depositCode").value;
     const amount = parseFloat(document.getElementById("depositAmount").value);
     if (code === "1234" && amount > 0) {
-      const balance = parseFloat(localStorage.getItem("balance") || 0);
-      const credit = parseInt(localStorage.getItem("credit") || 0);
-      localStorage.setItem("balance", balance + amount);
-      localStorage.setItem("credit", credit + Math.floor(amount / 5));
-      updateDisplay();
+      let balance = parseFloat(localStorage.getItem("balance")) || 0;
+      let credit = parseFloat(localStorage.getItem("credit")) || 0;
+      balance += amount;
+      credit += Math.floor(amount / 5);
+      localStorage.setItem("balance", balance.toFixed(2));
+      localStorage.setItem("credit", credit.toFixed(2));
+      updateDisplayedValues();
       closeAllModals();
-      showModal("Deposit successful!");
+      showMessage("Success", "Deposit successful!");
     } else {
-      showModal("Invalid code or amount.");
+      showMessage("Error", "Invalid code or amount.");
     }
   }
 
   function processWithdraw() {
     const code = document.getElementById("withdrawCode").value;
     const amount = parseFloat(document.getElementById("withdrawAmount").value);
-    const balance = parseFloat(localStorage.getItem("balance") || 0);
+    let balance = parseFloat(localStorage.getItem("balance")) || 0;
     if (code === "1234" && amount > 0 && amount <= balance) {
-      localStorage.setItem("balance", balance - amount);
-      updateDisplay();
+      balance -= amount;
+      localStorage.setItem("balance", balance.toFixed(2));
+      updateDisplayedValues();
       closeAllModals();
-      showModal("Withdraw successful!");
+      showMessage("Success", "Withdraw successful!");
     } else {
-      showModal("Invalid withdrawal.");
+      showMessage("Error", "Invalid withdrawal.");
     }
-  }
-
-  function updateDisplay() {
-    document.getElementById("balance").innerText = "$" + (parseFloat(localStorage.getItem("balance")) || 0).toFixed(2);
-    document.getElementById("credit").innerText = localStorage.getItem("credit") || 0;
-    document.getElementById("userName").innerText = localStorage.getItem("name") || "Welcome!";
-    document.getElementById("userPhoto").src = localStorage.getItem("photo") || "default.jpg";
-  }
-
-  document.getElementById("profileForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    const name = document.getElementById("inputName").value;
-    const photoInput = document.getElementById("inputPhoto");
-    if (photoInput.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        localStorage.setItem("photo", e.target.result);
-        updateDisplay();
-      };
-      reader.readAsDataURL(photoInput.files[0]);
-    }
-    localStorage.setItem("name", name);
-    closeAllModals();
-    updateDisplay();
-  });
-
-  function showModal(message) {
-    const div = document.createElement("div");
-    div.className = "modal-bg";
-    div.innerHTML = `<div class='modal'><p>${message}</p><button class='mt-4 bg-blue-500 px-4 py-2 rounded' onclick='this.closest(".modal-bg").remove()'>Close</button></div>`;
-    document.body.appendChild(div);
-  }
-
-  updateDisplay();
-</script>
-  <script>
-  function openTransferModal() {
-    closeAllModals();
-    document.getElementById("transferModal").classList.remove("hidden");
-  }
-
-  function showMessage(title, message) {
-    document.getElementById("messageModalTitle").innerText = title || "Notice";
-    document.getElementById("messageModalText").innerText = message || "";
-    document.getElementById("messageModal").classList.remove("hidden");
   }
 
   function processTransfer() {
@@ -288,26 +252,45 @@
 
     updateDisplayedValues();
     closeAllModals();
+    showMessage("Success", "Transferred to credit.");
   }
 
   function updateDisplayedValues() {
     const balance = parseFloat(localStorage.getItem("balance")) || 0;
     const credit = parseFloat(localStorage.getItem("credit")) || 0;
 
-    const balanceEl = document.getElementById("balanceDisplay");
-    const creditEl = document.getElementById("creditDisplay");
-
-    if (balanceEl) balanceEl.innerText = "$" + balance.toFixed(2);
-    if (creditEl) creditEl.innerText = "$" + credit.toFixed(2);
+    document.getElementById("balance").innerText = "$" + balance.toFixed(2);
+    document.getElementById("credit").innerText = credit.toFixed(2);
+    document.getElementById("userName").innerText = localStorage.getItem("name") || "Welcome!";
+    document.getElementById("userPhoto").src = localStorage.getItem("photo") || "default.jpg";
   }
 
-  function closeAllModals() {
-    document.querySelectorAll(".modal-bg").forEach(modal => modal.classList.add("hidden"));
+  function showMessage(title, message) {
+    document.getElementById("messageModalTitle").innerText = title || "Notice";
+    document.getElementById("messageModalText").innerText = message || "";
+    document.getElementById("messageModal").classList.remove("hidden");
   }
 
-  // Call on page load
+  document.getElementById("profileForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const name = document.getElementById("inputName").value;
+    const photoInput = document.getElementById("inputPhoto");
+    if (photoInput.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        localStorage.setItem("photo", e.target.result);
+        updateDisplayedValues();
+      };
+      reader.readAsDataURL(photoInput.files[0]);
+    }
+    localStorage.setItem("name", name);
+    closeAllModals();
+    updateDisplayedValues();
+  });
+
   window.addEventListener("load", updateDisplayedValues);
 </script>
+
 
 </body>
 </html>
