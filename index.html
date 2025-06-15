@@ -42,10 +42,7 @@
   <div class="flex items-center justify-between mb-4">
     <div class="flex items-center space-x-3 cursor-pointer" onclick="openProfileModal()">
       <img id="userPhoto" src="default.jpg" alt="User" class="w-12 h-12 rounded-full object-cover">
-      <div>
-        <div class="text-white font-bold text-lg" id="userName">Welcome!</div>
-        <div id="userDetails" class="text-sm text-gray-400"></div>
-      </div>
+      <div class="text-white font-bold text-lg" id="userName">Welcome!</div>
     </div>
   </div>
 
@@ -120,113 +117,54 @@
   </div>
 </div>
 
+<!-- General Modal -->
+<div id="generalModal" class="hidden modal-bg">
+  <div class="modal">
+    <h2 class="text-lg font-bold mb-2">Notice</h2>
+    <p id="modalMessage"></p>
+    <button onclick="closeAllModals()" class="mt-4 bg-gray-700 px-4 py-2 rounded">OK</button>
+  </div>
+</div>
+
 <script>
-function openCreditModal() {
-  document.getElementById("creditModal").classList.remove("hidden");
-}
-
-function processCredit() {
-  const amount = parseFloat(document.getElementById("creditAmount").value);
-  let balance = parseFloat(localStorage.getItem("balance") || 0);
-  let credit = parseInt(localStorage.getItem("credit") || 0);
-  if (isNaN(amount) || amount <= 0) {
-    return alert("Enter a valid amount.");
+  function openCreditModal() {
+    document.getElementById("creditModal").classList.remove("hidden");
   }
-  if (amount > balance) {
-    return alert("Insufficient balance.");
+
+  function showModal(message) {
+    document.getElementById("modalMessage").innerText = message || "Something went wrong.";
+    document.getElementById("generalModal").classList.remove("hidden");
   }
-  balance -= amount;
-  credit += Math.floor(amount);
-  localStorage.setItem("balance", balance);
-  localStorage.setItem("credit", credit);
-  updateDisplay();
-  closeAllModals();
-  alert("Converted successfully to credit.");
-}
 
-function updateDisplay() {
-  document.getElementById("balance").innerText = "$" + (parseFloat(localStorage.getItem("balance")) || 0).toFixed(2);
-  document.getElementById("credit").innerText = localStorage.getItem("credit") || 0;
-  document.getElementById("userName").innerText = localStorage.getItem("name") || "Welcome!";
-  document.getElementById("userPhoto").src = localStorage.getItem("photo") || "default.jpg";
-  document.getElementById("userDetails").innerText = `${localStorage.getItem("age") || ""} | ${localStorage.getItem("country") || ""} | ${localStorage.getItem("height") || ""}`;
-  document.getElementById("inputName").value = localStorage.getItem("name") || "";
-  document.getElementById("inputAge").value = localStorage.getItem("age") || "";
-  document.getElementById("inputCountry").value = localStorage.getItem("country") || "";
-  document.getElementById("inputHeight").value = localStorage.getItem("height") || "";
-}
+  function closeAllModals() {
+    document.querySelectorAll(".modal-bg").forEach(m => m.classList.add("hidden"));
+  }
 
-function closeAllModals() {
-  document.querySelectorAll(".modal-bg").forEach(m => m.classList.add("hidden"));
-}
-
-function openProfileModal() {
-  document.getElementById("profileModal").classList.remove("hidden");
-}
-
-function openDepositModal() {
-  document.getElementById("depositModal").classList.remove("hidden");
-}
-
-function openWithdrawModal() {
-  document.getElementById("withdrawModal").classList.remove("hidden");
-}
-
-function processDeposit() {
-  const code = document.getElementById("depositCode").value;
-  const amount = parseFloat(document.getElementById("depositAmount").value);
-  if (code === "1234" && amount > 0) {
+  function processCredit() {
+    const amount = parseFloat(document.getElementById("creditAmount").value);
     let balance = parseFloat(localStorage.getItem("balance") || 0);
-    balance += amount;
-    localStorage.setItem("balance", balance);
-    updateDisplay();
-    closeAllModals();
-    alert("Deposit successful.");
-  } else {
-    alert("Invalid code or amount.");
-  }
-}
-
-function processWithdraw() {
-  const code = document.getElementById("withdrawCode").value;
-  const amount = parseFloat(document.getElementById("withdrawAmount").value);
-  let balance = parseFloat(localStorage.getItem("balance") || 0);
-  if (code === "1234" && amount > 0 && amount <= balance) {
+    let credit = parseInt(localStorage.getItem("credit") || 0);
+    if (isNaN(amount) || amount <= 0) {
+      return showModal("Enter a valid amount.");
+    }
+    if (amount > balance) {
+      return showModal("Insufficient balance.");
+    }
     balance -= amount;
+    credit += Math.floor(amount);
     localStorage.setItem("balance", balance);
+    localStorage.setItem("credit", credit);
     updateDisplay();
     closeAllModals();
-    alert("Withdrawal successful.");
-  } else {
-    alert("Invalid code or insufficient funds.");
+    showModal("Converted successfully to credit.");
   }
-}
 
-updateDisplay();
-
-document.getElementById("profileForm").addEventListener("submit", function(e) {
-  e.preventDefault();
-  const name = document.getElementById("inputName").value;
-  const age = document.getElementById("inputAge").value;
-  const country = document.getElementById("inputCountry").value;
-  const height = document.getElementById("inputHeight").value;
-  const photoInput = document.getElementById("inputPhoto");
-  localStorage.setItem("name", name);
-  localStorage.setItem("age", age);
-  localStorage.setItem("country", country);
-  localStorage.setItem("height", height);
-  if (photoInput.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      localStorage.setItem("photo", e.target.result);
-      updateDisplay();
-    };
-    reader.readAsDataURL(photoInput.files[0]);
-  } else {
-    updateDisplay();
+  function updateDisplay() {
+    document.getElementById("balance").innerText = "$" + parseFloat(localStorage.getItem("balance") || 0).toFixed(2);
+    document.getElementById("credit").innerText = parseInt(localStorage.getItem("credit") || 0);
   }
-  closeAllModals();
-});
+
+  window.addEventListener("load", updateDisplay);
 </script>
 </body>
 </html>
