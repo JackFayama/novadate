@@ -38,46 +38,41 @@
 </head>
 <body>
 <div class="p-4 max-w-7xl mx-auto">
-  <!-- Fixed Top Section -->
-  <div class="md:fixed md:top-0 md:left-0 md:right-0 md:bg-[#111827] md:z-50">
-    <div class="md:flex md:items-center md:justify-between md:px-4 md:py-2">
-      <!-- User Header -->
-      <div class="flex items-center space-x-3 cursor-pointer mb-4 md:mb-0" onclick="openProfileModal()">
-        <img id="userPhoto" src="default.jpg" alt="User" class="w-12 h-12 rounded-full object-cover">
-        <div class="text-white font-bold text-lg" id="userName">Welcome!</div>
-      </div>
+  <!-- Fixed Header -->
+  <div class="sticky top-0 z-30 bg-[#111827] pb-2">
+    <div class="flex items-center space-x-3 cursor-pointer mb-4" onclick="openProfileModal()">
+      <img id="userPhoto" src="default.jpg" alt="User" class="w-12 h-12 rounded-full object-cover">
+      <div class="text-white font-bold text-lg" id="userName">Welcome!</div>
+    </div>
 
-      <!-- Balance & Credit -->
-      <div class="bg-gray-800 p-4 rounded-xl space-y-2 w-full md:w-[49.5%] md:ml-auto">
-        <div class="flex justify-between text-sm">
-          <span>Balance:</span>
-          <span id="balance">$0.00</span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span>Credit:</span>
-          <span id="credit">0</span>
-        </div>
-        <div class="flex flex-wrap gap-2 mt-3">
-          <button onclick="openDepositModal()" class="bg-green-600 px-4 py-2 rounded-full text-sm">Deposit</button>
-          <button onclick="openWithdrawModal()" class="bg-red-600 px-4 py-2 rounded-full text-sm">Withdraw</button>
-          <button onclick="openTransferModal()" class="bg-blue-600 px-4 py-2 rounded-full text-sm">Transfer</button>
-        </div>
+    <!-- Balance & Credit -->
+    <div class="bg-gray-800 p-4 rounded-xl space-y-2 w-full max-w-[66.66%]">
+      <div class="flex justify-between text-sm">
+        <span>Balance:</span>
+        <span id="balance">$0.00</span>
+      </div>
+      <div class="flex justify-between text-sm">
+        <span>Credit:</span>
+        <span id="credit">0</span>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-3">
+        <button onclick="openDepositModal()" class="bg-green-600 px-4 py-2 rounded-full text-sm">Deposit</button>
+        <button onclick="openWithdrawModal()" class="bg-red-600 px-4 py-2 rounded-full text-sm">Withdraw</button>
+        <button onclick="openTransferModal()" class="bg-blue-600 px-4 py-2 rounded-full text-sm">Transfer</button>
       </div>
     </div>
 
     <!-- Section Title -->
-    <h2 class="mt-6 md:mt-4 text-white font-semibold text-lg md:ml-[calc(50%+0.25rem)] md:mb-0">People You May Know</h2>
+    <h2 class="mt-6 mb-4 text-white font-semibold text-lg pl-1">People You May Know</h2>
   </div>
 
-  <!-- Main Content -->
-  <div class="pt-[250px] md:pt-[200px]">
-    <div id="userList" class="grid gap-4 md:grid-cols-4">
-      <!-- Example User Card -->
-    </div>
+  <!-- Users Grid -->
+  <div id="userList" class="grid gap-4 md:grid-cols-4 mt-2">
+    <!-- Example User Card -->
   </div>
 </div>
 
-<!-- Profile Edit Modal -->
+<!-- Modals -->
 <div id="profileModal" class="hidden modal-bg">
   <div class="modal">
     <h2 class="text-lg font-bold mb-4">Edit Profile</h2>
@@ -93,7 +88,6 @@
   </div>
 </div>
 
-<!-- Deposit Modal -->
 <div id="depositModal" class="hidden modal-bg">
   <div class="modal">
     <h2 class="text-lg font-bold mb-4">Deposit Funds</h2>
@@ -105,7 +99,6 @@
   </div>
 </div>
 
-<!-- Withdraw Modal -->
 <div id="withdrawModal" class="hidden modal-bg">
   <div class="modal">
     <h2 class="text-lg font-bold mb-4">Withdraw Funds</h2>
@@ -116,7 +109,6 @@
   </div>
 </div>
 
-<!-- Transfer Modal -->
 <div id="transferModal" class="hidden modal-bg">
   <div class="modal">
     <h2 class="text-lg font-bold mb-4">Transfer to Credit</h2>
@@ -127,7 +119,6 @@
   </div>
 </div>
 
-<!-- Message Modal -->
 <div id="messageModal" class="hidden modal-bg">
   <div class="modal">
     <h2 id="messageModalTitle" class="text-lg font-bold mb-2">Notice</h2>
@@ -139,6 +130,16 @@
 <script>
   // Populate Users
   const exampleUsers = [
+    { name: "Lena, 23", country: "Kenya", img: "user1.jpg" },
+    { name: "Samuel, 29", country: "Nigeria", img: "user2.jpg" },
+    { name: "Maya, 27", country: "Ghana", img: "user3.jpg" },
+    { name: "Kevin, 30", country: "Uganda", img: "user4.jpg" },
+    { name: "Rose, 25", country: "Tanzania", img: "user5.jpg" },
+    { name: "Lena, 23", country: "Kenya", img: "user1.jpg" },
+    { name: "Samuel, 29", country: "Nigeria", img: "user2.jpg" },
+    { name: "Maya, 27", country: "Ghana", img: "user3.jpg" },
+    { name: "Kevin, 30", country: "Uganda", img: "user4.jpg" },
+    { name: "Rose, 25", country: "Tanzania", img: "user5.jpg" },
     { name: "Lena, 23", country: "Kenya", img: "user1.jpg" },
     { name: "Samuel, 29", country: "Nigeria", img: "user2.jpg" },
     { name: "Maya, 27", country: "Ghana", img: "user3.jpg" },
