@@ -3,288 +3,235 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NovaDate</title>
+  <title>Nova Dating</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body {
+      background-color: #111827;
+      color: white;
+      font-family: 'Helvetica', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #1f2937;
+      padding: 2rem;
+      border-radius: 1rem;
+      width: 90%;
+      max-width: 400px;
+      z-index: 50;
+    }
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 40;
+    }
+    textarea {
+      resize: none;
+    }
+  </style>
 </head>
-<body class="bg-gray-900 text-white font-sans">
-  <div class="max-w-xl mx-auto p-4">
-    <!-- User Header -->
-    <div class="flex items-center space-x-4 mb-4">
-      <img id="userProfileImage" src="" alt="Profile" class="w-12 h-12 rounded-full object-cover bg-gray-600" />
-      <div>
-        <h2 id="userNameDisplay" class="text-lg font-semibold">Welcome!</h2>
-      </div>
-    </div>
-
-    <!-- Editable Profile Section -->
-    <div id="profileEditSection" class="bg-gray-800 p-4 rounded-xl space-y-2">
-      <input type="file" accept="image/*" id="userImageInput" class="block w-full bg-gray-700 p-2 rounded" />
-      <input type="text" id="userName" placeholder="Your Name" class="block w-full bg-gray-700 p-2 rounded" />
-      <input type="number" id="userAge" placeholder="Age" class="block w-full bg-gray-700 p-2 rounded" />
-      <input type="text" id="userCountry" placeholder="Country" class="block w-full bg-gray-700 p-2 rounded" />
-      <input type="text" id="userHeight" placeholder="Height" class="block w-full bg-gray-700 p-2 rounded" />
-      <button onclick="saveProfile()" class="bg-green-600 w-full py-2 rounded">Save Profile</button>
-    </div>
-
-    <!-- Balance and Credit Info -->
-    <div class="bg-gray-800 mt-4 p-4 rounded-xl">
-      <div class="flex justify-between">
-        <div>
-          <p class="text-sm">Balance</p>
-          <p id="userBalance" class="text-xl font-bold">$0.00</p>
-        </div>
-        <div>
-          <p class="text-sm">Credit</p>
-          <p id="userCredit" class="text-xl font-bold">0</p>
-        </div>
-      </div>
-      <div class="mt-4 flex space-x-2">
-        <button onclick="openModal('depositModal')" class="bg-green-600 flex-1 py-2 rounded">Deposit</button>
-        <button onclick="openModal('withdrawModal')" class="bg-yellow-500 flex-1 py-2 rounded">Withdraw</button>
-      </div>
-    </div>
-
-    <!-- People You May Know -->
-    <h3 class="mt-6 mb-2 text-lg font-semibold">People You May Know</h3>
-    <div id="matches" class="space-y-6"></div>
-  </div>
-
-  <!-- Deposit Modal -->
-  <div id="depositModal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
-    <div class="bg-white text-black p-6 rounded w-80">
-      <h3 class="text-lg font-bold mb-2">Deposit</h3>
-      <p class="text-sm">Use M-PESA Till Number 1234</p>
-      <input type="text" id="depositCode" placeholder="Enter Payment Code" class="w-full border p-2 mt-2 mb-4" />
-      <button onclick="submitDeposit()" class="w-full bg-green-600 text-white p-2 rounded">Confirm</button>
-      <button onclick="closeModal('depositModal')" class="mt-2 text-sm text-gray-600 w-full">Cancel</button>
+<body>
+<div class="max-w-md mx-auto p-4">
+  <!-- User Header -->
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center space-x-3 cursor-pointer" onclick="openProfileModal()">
+      <img id="userPhoto" src="default.jpg" alt="User" class="w-12 h-12 rounded-full object-cover">
+      <div class="text-white font-bold text-lg" id="userName">Welcome!</div>
     </div>
   </div>
 
-  <!-- Withdraw Modal -->
-  <div id="withdrawModal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
-    <div class="bg-white text-black p-6 rounded w-80">
-      <h3 class="text-lg font-bold mb-2">Withdraw</h3>
-      <p class="text-sm">Enter security code to withdraw</p>
-      <input type="text" id="withdrawCode" placeholder="Enter Security Code" class="w-full border p-2 mt-2 mb-4" />
-      <input type="number" id="withdrawAmount" placeholder="Amount" class="w-full border p-2 mt-2 mb-4" />
-      <button onclick="submitWithdraw()" class="w-full bg-yellow-500 text-black p-2 rounded">Withdraw</button>
-      <button onclick="closeModal('withdrawModal')" class="mt-2 text-sm text-gray-600 w-full">Cancel</button>
+  <!-- Balance & Credit -->
+  <div class="bg-gray-800 p-4 rounded-xl space-y-2">
+    <div class="flex justify-between text-sm">
+      <span>Balance:</span>
+      <span id="balance">$0.00</span>
+    </div>
+    <div class="flex justify-between text-sm">
+      <span>Credit:</span>
+      <span id="credit">0</span>
+    </div>
+    <div class="flex space-x-4 mt-3">
+      <button onclick="openDepositModal()" class="bg-green-600 px-4 py-2 rounded-full text-sm">Deposit</button>
+      <button onclick="openWithdrawModal()" class="bg-red-600 px-4 py-2 rounded-full text-sm">Withdraw</button>
     </div>
   </div>
 
-  <!-- Transfer Modal -->
-<div id="transferModal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
-  <div class="bg-white text-black p-6 rounded w-80">
-    <h3 class="text-lg font-bold mb-2">Transfer</h3>
-    <p class="text-sm">Move funds from Balance to Credit</p>
-    <input type="number" id="transferAmount" placeholder="Enter Amount" class="w-full border p-2 mt-2 mb-4" />
-    <button onclick="submitTransfer()" class="w-full bg-yellow-500 text-black p-2 rounded">Transfer</button>
-    <button onclick="closeModal('transferModal')" class="mt-2 text-sm text-gray-600 w-full">Cancel</button>
+  <!-- People You May Know -->
+  <h2 class="mt-6 mb-2 text-white font-semibold">People You May Know</h2>
+  <div id="userList" class="space-y-4">
+    <!-- Example User Card -->
   </div>
 </div>
 
-  <!-- General Feedback Modal -->
-<div id="feedbackModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
-  <div class="bg-white text-black p-6 rounded w-80 text-center">
-    <h3 class="text-lg font-bold mb-2" id="modalTitle">Title</h3>
-    <p class="text-sm" id="modalMessage">Message</p>
-    <button onclick="closeModal('feedbackModal')" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded">OK</button>
+<!-- Profile Edit Modal -->
+<div id="profileModal" class="hidden modal-bg">
+  <div class="modal">
+    <h2 class="text-lg font-bold mb-4">Edit Profile</h2>
+    <form id="profileForm">
+      <input type="text" id="inputName" placeholder="Your Name" class="w-full mb-2 p-2 rounded text-black" />
+      <input type="number" id="inputAge" placeholder="Age" class="w-full mb-2 p-2 rounded text-black" />
+      <input type="text" id="inputCountry" placeholder="Country" class="w-full mb-2 p-2 rounded text-black" />
+      <input type="text" id="inputHeight" placeholder="Height" class="w-full mb-2 p-2 rounded text-black" />
+      <input type="file" id="inputPhoto" accept="image/*" class="w-full mb-2 p-2 rounded" />
+      <button type="submit" class="bg-blue-600 w-full py-2 mt-2 rounded">Save</button>
+      <button type="button" class="mt-2 text-sm text-gray-300" onclick="closeAllModals()">Cancel</button>
+    </form>
   </div>
 </div>
 
-  <!-- Message Modal -->
-  <div id="messageModal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
-    <div class="bg-white text-black p-4 rounded w-72 text-center">
-      <p id="messageModalText" class="mb-4"></p>
-      <button onclick="closeModal('messageModal')" class="bg-blue-600 text-white px-4 py-2 rounded">OK</button>
-    </div>
+<!-- Deposit Modal -->
+<div id="depositModal" class="hidden modal-bg">
+  <div class="modal">
+    <h2 class="text-lg font-bold mb-4">Deposit Funds</h2>
+    <p>Send to till number <strong>1234</strong></p>
+    <input type="text" id="depositCode" placeholder="Enter confirmation code" class="w-full p-2 rounded text-black mt-2" />
+    <input type="number" id="depositAmount" placeholder="Amount" class="w-full p-2 rounded text-black mt-2" />
+    <button onclick="processDeposit()" class="bg-green-600 w-full py-2 mt-2 rounded">Confirm</button>
+    <button class="mt-2 text-sm text-gray-300" onclick="closeAllModals()">Cancel</button>
   </div>
+</div>
 
-  <script>
-    function openModal(id) {
-      document.getElementById(id).classList.remove('hidden');
-    }
+<!-- Withdraw Modal -->
+<div id="withdrawModal" class="hidden modal-bg">
+  <div class="modal">
+    <h2 class="text-lg font-bold mb-4">Withdraw Funds</h2>
+    <input type="text" id="withdrawCode" placeholder="Enter security code" class="w-full p-2 rounded text-black mt-2" />
+    <input type="number" id="withdrawAmount" placeholder="Amount" class="w-full p-2 rounded text-black mt-2" />
+    <button onclick="processWithdraw()" class="bg-red-600 w-full py-2 mt-2 rounded">Confirm</button>
+    <button class="mt-2 text-sm text-gray-300" onclick="closeAllModals()">Cancel</button>
+  </div>
+</div>
 
-    function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
-    }
+<script>
+  // Example user list
+  const exampleUsers = [
+    { name: "Lena, 23", country: "Kenya", img: "user1.jpg" },
+    { name: "Samuel, 29", country: "Nigeria", img: "user2.jpg" },
+    { name: "Maya, 27", country: "Ghana", img: "user3.jpg" },
+    { name: "Kevin, 30", country: "Uganda", img: "user4.jpg" },
+    { name: "Rose, 25", country: "Tanzania", img: "user5.jpg" }
+  ];
 
-    function showModalMessage(msg) {
-      document.getElementById("messageModalText").innerText = msg;
-      openModal("messageModal");
-    }
+  const userList = document.getElementById("userList");
+  exampleUsers.forEach(user => {
+    const div = document.createElement("div");
+    div.className = "flex items-start bg-gray-800 p-3 rounded-xl space-x-3";
+    div.innerHTML = `
+      <img src="${user.img}" class="w-12 h-12 rounded-full object-cover">
+      <div class="flex-1">
+        <div class="flex items-center space-x-2">
+          <span class="font-semibold">${user.name}</span>
+          <span class="text-green-400">●</span>
+        </div>
+        <div class="text-sm text-gray-400">${user.country}</div>
+        <div class="mt-2 flex items-center space-x-2">
+          <textarea rows="1" placeholder="Type message..." oninput="growTextArea(this)" class="w-full p-2 text-sm rounded text-black bg-white"></textarea>
+          <button onclick="sendMessage(this)" class="text-blue-500 text-xl">➤</button>
+        </div>
+      </div>`;
+    userList.appendChild(div);
+  });
 
-    function saveProfile() {
-      const name = document.getElementById("userName").value;
-      const age = document.getElementById("userAge").value;
-      const country = document.getElementById("userCountry").value;
-      const height = document.getElementById("userHeight").value;
-      const file = document.getElementById("userImageInput").files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          localStorage.setItem("userImage", e.target.result);
-          document.getElementById("userProfileImage").src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-      localStorage.setItem("userName", name);
-      localStorage.setItem("userAge", age);
-      localStorage.setItem("userCountry", country);
-      localStorage.setItem("userHeight", height);
-      document.getElementById("userNameDisplay").innerText = `Welcome ${name}!`;
-    }
-
-    function loadProfile() {
-      const img = localStorage.getItem("userImage");
-      const name = localStorage.getItem("userName") || "User";
-      if (img) document.getElementById("userProfileImage").src = img;
-      document.getElementById("userNameDisplay").innerText = `Welcome ${name}!`;
-    }
-
-    function updateBalance(amount) {
-      const current = parseFloat(localStorage.getItem("balance") || "0");
-      const newBal = current + amount;
-      localStorage.setItem("balance", newBal);
-      document.getElementById("userBalance").innerText = `$${newBal.toFixed(2)}`;
-    }
-
-    function updateCredit(count) {
-      const current = parseInt(localStorage.getItem("credit") || "0");
-      const newCredit = current + count;
-      localStorage.setItem("credit", newCredit);
-      document.getElementById("userCredit").innerText = newCredit;
-    }
-
-    function submitDeposit() {
-      const code = document.getElementById("depositCode").value;
-      if (code === "1234") {
-        updateBalance(10);
-        updateCredit(1);
-        closeModal("depositModal");
-        showModalMessage("Deposit successful. Balance and credit updated.");
-      } else {
-        showModalMessage("Invalid payment code.");
-      }
-    }
-
-    function submitWithdraw() {
-      const code = document.getElementById("withdrawCode").value;
-      const amount = parseFloat(document.getElementById("withdrawAmount").value);
-      const current = parseFloat(localStorage.getItem("balance") || "0");
-      if (code === "1234" && amount > 0 && amount <= current) {
-        updateBalance(-amount);
-        closeModal("withdrawModal");
-        showModalMessage("Withdrawal successful.");
-      } else {
-        showModalMessage("Invalid code or insufficient balance.");
-      }
-    }
-
-    function init() {
-      loadProfile();
-      updateBalance(0);
-      updateCredit(0);
-      // Add 5 example matches with profile picture, online indicator, and message bar
-      const users = [
-        { name: "Emily", age: 24, country: "Kenya" },
-        { name: "Brian", age: 28, country: "Nigeria" },
-        { name: "Fatima", age: 22, country: "Ghana" },
-        { name: "James", age: 30, country: "Tanzania" },
-        { name: "Alice", age: 26, country: "Uganda" },
-      ];
-      const container = document.getElementById("matches");
-      users.forEach((user, index) => {
-        const div = document.createElement("div");
-        div.innerHTML = `
-          <div class="flex items-start space-x-3 bg-gray-800 p-3 rounded-xl">
-            <div class="relative">
-              <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                ${user.name.charAt(0)}
-              </div>
-              <div class="absolute bottom-0 right-0 h-3 w-3 bg-green-400 border-2 border-gray-800 rounded-full"></div>
-            </div>
-            <div class="flex-1">
-              <div class="text-sm font-semibold">${user.name}, ${user.age}</div>
-              <div class="text-xs text-gray-400">${user.country}</div>
-              <div class="mt-2">
-                <div class="flex items-center space-x-2">
-                  <textarea id="msg_${index}" class="flex-1 resize-none bg-gray-700 p-2 rounded text-white min-h-[40px] max-h-40 overflow-auto" placeholder="Type a message..." oninput="resizeTextArea(this)"></textarea>
-                  <button onclick="sendMessage(${index})" class="bg-blue-600 p-2 rounded text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    function resizeTextArea(el) {
-      el.style.height = 'auto';
-      el.style.height = (el.scrollHeight) + 'px';
-    }
-
-    function sendMessage(index) {
-      const credit = parseInt(localStorage.getItem("credit") || "0");
-      const textarea = document.getElementById("msg_" + index);
-      const message = textarea.value.trim();
-      if (credit < 1) {
-        showModalMessage("You need at least 1 credit to send a message.");
-        return;
-      }
-      if (message.length === 0) return;
-      updateCredit(-1);
-      textarea.value = "";
-      resizeTextArea(textarea);
-      showModalMessage("Message sent successfully.");
-    }
-
-    window.addEventListener("load", init);
-  </script>
-  <script>
-function openTransferModal() {
-  document.getElementById("transferModal").classList.remove("hidden");
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.add("hidden");
-}
-
-function showModal(title = "Notice", message = "") {
-  document.getElementById("modalTitle").innerText = title || "Notification";
-  document.getElementById("modalMessage").innerText = message || "Something happened.";
-  document.getElementById("feedbackModal").classList.remove("hidden");
-}
-
-function submitTransfer() {
-  const amount = parseFloat(document.getElementById("transferAmount").value);
-  let balance = parseFloat(localStorage.getItem("balance") || 0);
-  let credit = parseInt(localStorage.getItem("credit") || 0);
-
-  if (isNaN(amount) || amount <= 0) {
-    showModal("Invalid Input", "Please enter a valid amount.");
-    return;
+  function growTextArea(el) {
+    el.style.height = "auto";
+    el.style.height = (el.scrollHeight) + "px";
   }
 
-  if (amount > balance) {
-    showModal("Insufficient Balance", "You do not have enough balance to transfer this amount.");
-    return;
+  function sendMessage(btn) {
+    const credit = parseInt(localStorage.getItem("credit")) || 0;
+    if (credit < 1) return showModal("Insufficient credit. Deposit to message.");
+    const msg = btn.previousElementSibling.value.trim();
+    if (!msg) return;
+    btn.previousElementSibling.value = "";
+    localStorage.setItem("credit", credit - 1);
+    document.getElementById("credit").innerText = credit - 1;
+    showModal("Message sent!");
   }
 
-  balance -= amount;
-  credit += Math.floor(amount);
-  localStorage.setItem("balance", balance);
-  localStorage.setItem("credit", credit);
+  function openProfileModal() {
+    document.getElementById("profileModal").classList.remove("hidden");
+  }
+
+  function openDepositModal() {
+    document.getElementById("depositModal").classList.remove("hidden");
+  }
+
+  function openWithdrawModal() {
+    document.getElementById("withdrawModal").classList.remove("hidden");
+  }
+
+  function closeAllModals() {
+    document.querySelectorAll(".modal-bg").forEach(el => el.classList.add("hidden"));
+  }
+
+  function processDeposit() {
+    const code = document.getElementById("depositCode").value;
+    const amount = parseFloat(document.getElementById("depositAmount").value);
+    if (code === "1234" && amount > 0) {
+      const balance = parseFloat(localStorage.getItem("balance") || 0);
+      const credit = parseInt(localStorage.getItem("credit") || 0);
+      localStorage.setItem("balance", balance + amount);
+      localStorage.setItem("credit", credit + Math.floor(amount / 5));
+      updateDisplay();
+      closeAllModals();
+      showModal("Deposit successful!");
+    } else {
+      showModal("Invalid code or amount.");
+    }
+  }
+
+  function processWithdraw() {
+    const code = document.getElementById("withdrawCode").value;
+    const amount = parseFloat(document.getElementById("withdrawAmount").value);
+    const balance = parseFloat(localStorage.getItem("balance") || 0);
+    if (code === "1234" && amount > 0 && amount <= balance) {
+      localStorage.setItem("balance", balance - amount);
+      updateDisplay();
+      closeAllModals();
+      showModal("Withdraw successful!");
+    } else {
+      showModal("Invalid withdrawal.");
+    }
+  }
+
+  function updateDisplay() {
+    document.getElementById("balance").innerText = "$" + (parseFloat(localStorage.getItem("balance")) || 0).toFixed(2);
+    document.getElementById("credit").innerText = localStorage.getItem("credit") || 0;
+    document.getElementById("userName").innerText = localStorage.getItem("name") || "Welcome!";
+    document.getElementById("userPhoto").src = localStorage.getItem("photo") || "default.jpg";
+  }
+
+  document.getElementById("profileForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const name = document.getElementById("inputName").value;
+    const photoInput = document.getElementById("inputPhoto");
+    if (photoInput.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        localStorage.setItem("photo", e.target.result);
+        updateDisplay();
+      };
+      reader.readAsDataURL(photoInput.files[0]);
+    }
+    localStorage.setItem("name", name);
+    closeAllModals();
+    updateDisplay();
+  });
+
+  function showModal(message) {
+    const div = document.createElement("div");
+    div.className = "modal-bg";
+    div.innerHTML = `<div class='modal'><p>${message}</p><button class='mt-4 bg-blue-500 px-4 py-2 rounded' onclick='this.closest(".modal-bg").remove()'>Close</button></div>`;
+    document.body.appendChild(div);
+  }
+
   updateDisplay();
-  closeModal("transferModal");
-  showModal("Transfer Successful", "Your funds have been converted to credit.");
-}
 </script>
-
 </body>
 </html>
