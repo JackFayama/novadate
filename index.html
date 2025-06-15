@@ -108,6 +108,27 @@
   </div>
 </div>
 
+  <!-- Credit Button -->
+<button onclick="openCreditModal()" class="flex items-center bg-white text-blue-700 font-semibold px-4 py-2 rounded-full mt-2 w-full">
+  <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+    <path d="M10 5a1 1 0 00-1 1v4H5a1 1 0 000 2h4v4a1 1 0 002 0v-4h4a1 1 0 000-2h-4V6a1 1 0 00-1-1z" />
+  </svg>
+  Convert to Credit
+</button>
+
+  <!-- Credit Modal -->
+<div id="creditModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50">
+  <div class="bg-white text-black p-6 rounded-lg w-80">
+    <h2 class="text-lg font-bold mb-2">Transfer to Credit</h2>
+    <p class="text-sm mb-3">Enter amount to move from balance to credit.</p>
+    <input id="creditAmount" type="number" class="w-full border px-3 py-2 rounded mb-4" placeholder="e.g. 5" />
+    <div class="flex justify-end space-x-2">
+      <button onclick="closeCreditModal()" class="bg-gray-400 text-white px-4 py-2 rounded">Cancel</button>
+      <button onclick="confirmCredit()" class="bg-blue-600 text-white px-4 py-2 rounded">Transfer</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // Example user list
   const exampleUsers = [
@@ -233,5 +254,50 @@
 
   updateDisplay();
 </script>
+  <script>
+  function openCreditModal() {
+  document.getElementById("creditModal").classList.remove("hidden");
+}
+
+function closeCreditModal() {
+  document.getElementById("creditModal").classList.add("hidden");
+}
+
+function confirmCredit() {
+  const amount = parseFloat(document.getElementById("creditAmount").value);
+  const balance = parseFloat(localStorage.getItem("balance") || 0);
+  const credit = parseFloat(localStorage.getItem("credit") || 0);
+
+  if (isNaN(amount) || amount <= 0) {
+    showModal("Invalid Amount", "Please enter a valid number.");
+    return;
+  }
+
+  if (balance < amount) {
+    showModal("Insufficient Balance", "You do not have enough funds to transfer.");
+    return;
+  }
+
+  const newBalance = balance - amount;
+  const newCredit = credit + amount;
+
+  localStorage.setItem("balance", newBalance.toFixed(2));
+  localStorage.setItem("credit", newCredit.toFixed(2));
+
+  updateBalanceDisplay();
+  updateCreditDisplay();
+  closeCreditModal();
+  showModal("Success", `Transferred $${amount.toFixed(2)} to your credit.`);
+}
+
+function updateBalanceDisplay() {
+  document.getElementById("balanceDisplay").innerText = `$${parseFloat(localStorage.getItem("balance") || 0).toFixed(2)}`;
+}
+
+function updateCreditDisplay() {
+  document.getElementById("creditDisplay").innerText = `$${parseFloat(localStorage.getItem("credit") || 0).toFixed(2)}`;
+}
+</script>
+  
 </body>
 </html>
