@@ -3,271 +3,118 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NovaDate - Dashboard</title>
+  <title>Nova Dating</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .online-dot {
+    body { background-color: #111827; }
+    .active-dot {
       height: 10px;
       width: 10px;
-      background-color: green;
-      border-radius: 50%;
+      background-color: #4ade80;
+      border-radius: 9999px;
       display: inline-block;
     }
+    input, textarea { color: black; }
   </style>
 </head>
-<body class="bg-gray-100">
-
-  <!-- Modal -->
-  <div id="modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
-    <div class="bg-white p-6 rounded shadow-lg w-96 text-center">
-      <h2 id="modalTitle" class="text-lg font-semibold mb-2">Notification</h2>
-      <p id="modalMessage" class="mb-4">This is a modal message.</p>
-      <button onclick="closeModal()" class="bg-blue-500 text-white px-4 py-2 rounded">OK</button>
+<body class="text-white font-sans">
+  <div class="max-w-md mx-auto px-4 py-6">
+    <!-- Welcome + Profile -->
+    <div class="flex items-center space-x-4">
+      <img id="profilePicture" src="https://via.placeholder.com/40" alt="User" class="h-10 w-10 rounded-full object-cover">
+      <button onclick="openProfileModal()" class="bg-green-700 px-3 py-2 rounded-full text-sm">Welcome, <span id="userNameDisplay">User</span> 👋</button>
     </div>
-  </div>
 
-  <div class="flex">
-    <!-- Sidebar -->
-    <div class="w-1/4 bg-white shadow p-4">
-      <div class="text-center">
-        <img id="userAvatar" src="https://via.placeholder.com/100" class="w-24 h-24 rounded-full mx-auto mb-2" alt="Profile">
-        <h2 id="userName" class="text-xl font-semibold">Username</h2>
-        <button onclick="openProfileEditor()" class="mt-2 text-sm text-blue-500">Edit Profile</button>
-      </div>
-
-      <!-- Profile Editor -->
-      <div id="profileEditor" class="mt-4 hidden">
-        <input id="ageInput" type="number" placeholder="Age" class="w-full mb-2 p-2 border rounded">
-        <input id="countryInput" type="text" placeholder="Country" class="w-full mb-2 p-2 border rounded">
-        <input id="heightInput" type="text" placeholder="Height" class="w-full mb-2 p-2 border rounded">
-        <input type="file" id="photoUpload" multiple accept="image/*" class="w-full mb-2">
-        <button onclick="saveProfile()" class="bg-blue-500 text-white px-4 py-2 rounded w-full">Save</button>
+    <!-- Profile Edit Modal -->
+    <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center hidden">
+      <div class="bg-white text-black p-4 rounded-lg w-80 space-y-3">
+        <h2 class="font-bold text-lg">Edit Profile</h2>
+        <input type="text" id="userName" placeholder="Name" class="w-full border rounded p-2">
+        <input type="number" id="userAge" placeholder="Age" class="w-full border rounded p-2">
+        <input type="text" id="userCountry" placeholder="Country" class="w-full border rounded p-2">
+        <input type="text" id="userHeight" placeholder="Height (e.g. 5'9)"> 
+        <input type="url" id="userPhoto" placeholder="Profile Photo URL" class="w-full border rounded p-2">
+        <button onclick="saveProfile()" class="bg-green-700 text-white px-4 py-2 rounded w-full">Save</button>
+        <button onclick="closeProfileModal()" class="text-sm text-red-600">Cancel</button>
       </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="w-3/4 p-6">
-      <h1 class="text-2xl font-bold mb-4">Discover Matches</h1>
-      <div id="matches" class="grid grid-cols-2 gap-4">
-        <!-- Match Cards will be inserted here -->
-        <!-- Ten Example Match Cards -->
-<div class="bg-white p-4 rounded shadow">
-  <div class="flex items-center space-x-3 mb-2">
-    <img src="https://randomuser.me/api/portraits/women/10.jpg" class="w-12 h-12 rounded-full">
-    <div>
-      <p class="font-semibold">Alice, 24</p>
-      <p class="text-sm text-gray-500">Kenya</p>
-    </div>
-    <span class="online-dot ml-auto"></span>
-  </div>
-  <textarea class="w-full border p-2 rounded mb-2" placeholder="Send a message..."></textarea>
-  <button class="bg-pink-500 text-white px-4 py-1 rounded w-full">Send</button>
-</div>
-
-<div class="bg-white p-4 rounded shadow">
-  <div class="flex items-center space-x-3 mb-2">
-    <img src="https://randomuser.me/api/portraits/men/11.jpg" class="w-12 h-12 rounded-full">
-    <div>
-      <p class="font-semibold">Chris, 29</p>
-      <p class="text-sm text-gray-500">Nigeria</p>
-    </div>
-    <span class="online-dot ml-auto"></span>
-  </div>
-  <textarea class="w-full border p-2 rounded mb-2" placeholder="Send a message..."></textarea>
-  <button class="bg-pink-500 text-white px-4 py-1 rounded w-full">Send</button>
-</div>
-
-<div class="bg-white p-4 rounded shadow">
-  <div class="flex items-center space-x-3 mb-2">
-    <img src="https://randomuser.me/api/portraits/women/12.jpg" class="w-12 h-12 rounded-full">
-    <div>
-      <p class="font-semibold">Diana, 22</p>
-      <p class="text-sm text-gray-500">South Africa</p>
-    </div>
-    <span class="online-dot ml-auto"></span>
-  </div>
-  <textarea class="w-full border p-2 rounded mb-2" placeholder="Send a message..."></textarea>
-  <button class="bg-pink-500 text-white px-4 py-1 rounded w-full">Send</button>
-</div>
-
-<div class="bg-white p-4 rounded shadow">
-  <div class="flex items-center space-x-3 mb-2">
-    <img src="https://randomuser.me/api/portraits/men/13.jpg" class="w-12 h-12 rounded-full">
-    <div>
-      <p class="font-semibold">Elijah, 30</p>
-      <p class="text-sm text-gray-500">Ghana</p>
-    </div>
-    <span class="online-dot ml-auto"></span>
-  </div>
-  <textarea class="w-full border p-2 rounded mb-2" placeholder="Send a message..."></textarea>
-  <button class="bg-pink-500 text-white px-4 py-1 rounded w-full">Send</button>
-</div>
-
-<div class="bg-white p-4 rounded shadow">
-  <div class="flex items-center space-x-3 mb-2">
-    <img src="https://randomuser.me/api/portraits/women/14.jpg" class="w-12 h-12 rounded-full">
-    <div>
-      <p class="font-semibold">Faith, 26</p>
-      <p class="text-sm text-gray-500">Uganda</p>
-    </div>
-    <span class="online-dot ml-auto"></span>
-  </div>
-  <textarea class="w-full border p-2 rounded mb-2" placeholder="Send a message..."></textarea>
-  <button class="bg-pink-500 text-white px-4 py-1 rounded w-full">Send</button>
-</div>
-
-<div class="bg-white p-4 rounded shadow">
-  <div class="flex items-center space-x-3 mb-2">
-    <img src="https://randomuser.me/api/portraits/men/15.jpg" class="w-12 h-12 rounded-full">
-    <div>
-      <p class="font-semibold">George, 28</p>
-      <p class="text-sm text-gray-500">Tanzania</p>
-    </div>
-    <span class="online-dot ml-auto"></span>
-  </div>
-  <textarea class="w-full border p-2 rounded mb-2" placeholder="Send a message..."></textarea>
-  <button class="bg-pink-500 text-white px-4 py-1 rounded w-full">Send</button>
-</div>
-
-<div class="bg-white p-4 rounded shadow">
-  <div class="flex items-center space-x-3 mb-2">
-    <img src="https://randomuser.me/api/portraits/women/16.jpg" class="w-12 h-12 rounded-full">
-    <div>
-      <p class="font-semibold">Helen, 31</p>
-      <p class="text-sm text-gray-500">Ethiopia</p>
-    </div>
-    <span class="online-dot ml-auto"></span>
-  </div>
-  <textarea class="w-full border p-2 rounded mb-2" placeholder="Send a message..."></textarea>
-  <button class="bg-pink-500 text-white px-4 py-1 rounded w-full">Send</button>
-</div>
-
-<div class="bg-white p-4 rounded shadow">
-  <div class="flex items-center space-x-3 mb-2">
-    <img src="https://randomuser.me/api/portraits/men/17.jpg" class="w-12 h-12 rounded-full">
-    <div>
-      <p class="font-semibold">Isaac, 24</p>
-      <p class="text-sm text-gray-500">Cameroon</p>
-    </div>
-    <span class="online-dot ml-auto"></span>
-  </div>
-  <textarea class="w-full border p-2 rounded mb-2" placeholder="Send a message..."></textarea>
-  <button class="bg-pink-500 text-white px-4 py-1 rounded w-full">Send</button>
-</div>
-
-<div class="bg-white p-4 rounded shadow">
-  <div class="flex items-center space-x-3 mb-2">
-    <img src="https://randomuser.me/api/portraits/women/18.jpg" class="w-12 h-12 rounded-full">
-    <div>
-      <p class="font-semibold">Janet, 29</p>
-      <p class="text-sm text-gray-500">Zambia</p>
-    </div>
-    <span class="online-dot ml-auto"></span>
-  </div>
-  <textarea class="w-full border p-2 rounded mb-2" placeholder="Send a message..."></textarea>
-  <button class="bg-pink-500 text-white px-4 py-1 rounded w-full">Send</button>
-</div>
-
-<div class="bg-white p-4 rounded shadow">
-  <div class="flex items-center space-x-3 mb-2">
-    <img src="https://randomuser.me/api/portraits/men/19.jpg" class="w-12 h-12 rounded-full">
-    <div>
-      <p class="font-semibold">Kevin, 27</p>
-      <p class="text-sm text-gray-500">Rwanda</p>
-    </div>
-    <span class="online-dot ml-auto"></span>
-  </div>
-  <textarea class="w-full border p-2 rounded mb-2" placeholder="Send a message..."></textarea>
-  <button class="bg-pink-500 text-white px-4 py-1 rounded w-full">Send</button>
-</div>
-
-      </div>
+    <!-- Matches List -->
+    <div class="mt-6 space-y-4">
+      <h2 class="font-bold text-lg">People You May Like</h2>
+      <div id="matches"></div>
     </div>
   </div>
 
   <script>
-    const matches = [
-      { name: "Janet", age: 23, country: "Kenya", avatar: "https://randomuser.me/api/portraits/women/1.jpg" },
-      { name: "Brian", age: 27, country: "Nigeria", avatar: "https://randomuser.me/api/portraits/men/2.jpg" },
-      { name: "Lucy", age: 25, country: "USA", avatar: "https://randomuser.me/api/portraits/women/3.jpg" },
-      { name: "Derrick", age: 30, country: "South Africa", avatar: "https://randomuser.me/api/portraits/men/4.jpg" },
-      { name: "Faith", age: 28, country: "Uganda", avatar: "https://randomuser.me/api/portraits/women/5.jpg" }
+    const matchesData = [
+      {name: "Sarah", age: 24, country: "Kenya", photo: "https://randomuser.me/api/portraits/women/1.jpg"},
+      {name: "Mike", age: 30, country: "USA", photo: "https://randomuser.me/api/portraits/men/2.jpg"},
+      {name: "Lina", age: 28, country: "Germany", photo: "https://randomuser.me/api/portraits/women/3.jpg"},
+      {name: "Kevin", age: 26, country: "UK", photo: "https://randomuser.me/api/portraits/men/4.jpg"},
+      {name: "Nadia", age: 22, country: "Nigeria", photo: "https://randomuser.me/api/portraits/women/5.jpg"},
+      {name: "James", age: 31, country: "Canada", photo: "https://randomuser.me/api/portraits/men/6.jpg"},
+      {name: "Aisha", age: 29, country: "South Africa", photo: "https://randomuser.me/api/portraits/women/6.jpg"},
+      {name: "Omar", age: 27, country: "UAE", photo: "https://randomuser.me/api/portraits/men/7.jpg"},
+      {name: "Grace", age: 25, country: "Ghana", photo: "https://randomuser.me/api/portraits/women/8.jpg"},
+      {name: "Brian", age: 32, country: "Australia", photo: "https://randomuser.me/api/portraits/men/9.jpg"},
     ];
 
-    function openProfileEditor() {
-      document.getElementById("profileEditor").classList.toggle("hidden");
-    }
-
-    function saveProfile() {
-      const age = document.getElementById("ageInput").value;
-      const country = document.getElementById("countryInput").value;
-      const height = document.getElementById("heightInput").value;
-      const photos = document.getElementById("photoUpload").files;
-
-      const reader = new FileReader();
-      if (photos[0]) {
-        reader.onload = function(e) {
-          document.getElementById("userAvatar").src = e.target.result;
-        }
-        reader.readAsDataURL(photos[0]);
-      }
-
-      localStorage.setItem("userProfile", JSON.stringify({ age, country, height }));
-      showModal("Profile Saved", "Your profile has been updated successfully.");
-    }
-
-    function renderMatches() {
-      const container = document.getElementById("matches");
-      container.innerHTML = "";
-      matches.forEach(match => {
-        const div = document.createElement("div");
-        div.className = "bg-white p-4 rounded shadow";
-        div.innerHTML = `
-          <div class="flex items-center space-x-3 mb-2">
-            <img src="${match.avatar}" class="w-12 h-12 rounded-full">
-            <div>
-              <p class="font-semibold">${match.name}, ${match.age}</p>
-              <p class="text-sm text-gray-500">${match.country}</p>
+    function displayMatches() {
+      const container = document.getElementById('matches');
+      container.innerHTML = '';
+      matchesData.forEach(match => {
+        container.innerHTML += `
+          <div class="bg-gray-800 rounded-lg p-3">
+            <div class="flex items-center space-x-3">
+              <img src="${match.photo}" class="w-12 h-12 rounded-full object-cover">
+              <div>
+                <div class="font-semibold">${match.name} <span class="active-dot"></span></div>
+                <div class="text-sm text-gray-400">${match.age}, ${match.country}</div>
+              </div>
             </div>
-            <span class="online-dot ml-auto"></span>
+            <textarea placeholder="Send a message..." class="mt-2 w-full rounded p-2 text-black" rows="2"></textarea>
           </div>
-          <textarea id="msg-${match.name}" class="w-full border p-2 rounded mb-2" placeholder="Send a message..."></textarea>
-          <button onclick="sendMessage('${match.name}')" class="bg-pink-500 text-white px-4 py-1 rounded w-full">Send</button>
         `;
-        container.appendChild(div);
       });
     }
 
-    function sendMessage(name) {
-      const msg = document.getElementById("msg-" + name).value.trim();
-      if (!msg) {
-        showModal("Message Required", "Please enter a message before sending.");
-        return;
-      }
-      showModal("Message Sent", `Your message to ${name} has been sent.`);
-      document.getElementById("msg-" + name).value = "";
+    function openProfileModal() {
+      document.getElementById('profileModal').classList.remove('hidden');
     }
 
-    function showModal(title, message) {
-      document.getElementById("modalTitle").innerText = title || "Notice";
-      document.getElementById("modalMessage").innerText = message || "Something happened.";
-      document.getElementById("modal").classList.remove("hidden");
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
     }
 
-    function closeModal() {
-      document.getElementById("modal").classList.add("hidden");
+    function saveProfile() {
+      const name = document.getElementById('userName').value;
+      const age = document.getElementById('userAge').value;
+      const country = document.getElementById('userCountry').value;
+      const height = document.getElementById('userHeight').value;
+      const photo = document.getElementById('userPhoto').value;
+      localStorage.setItem('userProfile', JSON.stringify({ name, age, country, height, photo }));
+      applyUserProfile();
+      closeProfileModal();
     }
 
-    window.onload = function () {
-      const profile = JSON.parse(localStorage.getItem("userProfile"));
+    function applyUserProfile() {
+      const profile = JSON.parse(localStorage.getItem('userProfile'));
       if (profile) {
-        document.getElementById("ageInput").value = profile.age;
-        document.getElementById("countryInput").value = profile.country;
-        document.getElementById("heightInput").value = profile.height;
+        document.getElementById('userNameDisplay').innerText = profile.name || 'User';
+        document.getElementById('profilePicture').src = profile.photo || 'https://via.placeholder.com/40';
+        document.getElementById('userName').value = profile.name;
+        document.getElementById('userAge').value = profile.age;
+        document.getElementById('userCountry').value = profile.country;
+        document.getElementById('userHeight').value = profile.height;
+        document.getElementById('userPhoto').value = profile.photo;
       }
-      document.getElementById("userName").textContent = "Jack"; // Replace with actual user name
-      renderMatches();
     }
+
+    window.addEventListener('load', () => {
+      applyUserProfile();
+      displayMatches();
+    });
   </script>
 </body>
 </html>
