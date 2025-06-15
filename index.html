@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NovaDate - Find Your Match</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-900">
+  <!-- Login/Signup -->
+  <div id="authSection" class="max-w-md mx-auto mt-20 p-6 bg-white rounded shadow">
+    <h2 id="formTitle" class="text-2xl font-bold mb-4">Login</h2>
+    <form id="authForm" class="space-y-4">
+      <input type="text" id="username" placeholder="Username" required class="w-full px-4 py-2 border rounded">
+      <input type="password" id="password" placeholder="Password" required class="w-full px-4 py-2 border rounded">
+      <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded">Submit</button>
+    </form>
+    <p class="mt-4 text-center text-sm">
+      <span id="togglePrompt">Don't have an account?</span>
+      <button onclick="toggleMode()" class="text-blue-500 hover:underline" id="toggleBtn">Sign Up</button>
+    </p>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" class="hidden max-w-4xl mx-auto mt-10">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold">Welcome, <span id="displayUser"></span></h1>
+      <div>
+        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full mr-2">Balance: $<span id="creditBalance">0</span></span>
+        <button onclick="logout()" class="text-red-500">Logout</button>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-semibold mb-2">Your Profile</h2>
+        <input type="text" id="bio" placeholder="Your bio..." class="w-full border p-2 rounded mb-2">
+        <button onclick="saveProfile()" class="bg-blue-500 text-white px-4 py-2 rounded">Save</button>
+      </div>
+
+      <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-semibold mb-4">Matches</h2>
+        <div id="matches" class="space-y-4"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deposit Modal -->
+  <div id="depositModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded shadow max-w-sm w-full">
+      <h2 class="text-xl font-bold mb-4">Deposit via M-PESA / VISA</h2>
+      <p class="mb-2">Send $5 or more to Till Number: <strong>123456</strong></p>
+      <input id="codeInput" placeholder="Enter payment code" class="w-full border p-2 rounded mb-3"/>
+      <button onclick="verifyDeposit()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded">Confirm</button>
+      <button onclick="closeDepositModal()" class="w-full mt-2 text-sm text-gray-600">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Modal Pop-up -->
+  <div id="feedbackModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full shadow">
+      <h2 id="modalTitle" class="text-xl font-bold mb-2">Title</h2>
+      <p id="modalMessage" class="mb-4">Message</p>
+      <button onclick="closeFeedbackModal()" class="bg-blue-500 text-white px-4 py-2 rounded w-full">OK</button>
+    </div>
+  </div>
+
+  <script>
+    let isLogin = true;
+
+    const users = () => JSON.parse(localStorage.getItem("users") || "{}");
+
+    function toggleMode() {
+      isLogin = !isLogin;
+      document.getElementById("formTitle").innerText = isLogin ? "Login" : "Sign Up";
+      document.getElementById("togglePrompt").innerText = isLogin ? "Don't have an account?" : "Already have an account?";
+      document.getElementById("toggleBtn").innerText = isLogin ? "Sign Up" : "Login";
+    }
+
+    document.getElementById("authForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      const userData = users();
+
+      if (isLogin) {
+        if (userData[username] && userData[username].password === password) {
+          localStorage.setItem("loggedInUser", username);
+          showDashboard(username);
+        } else {
+          showModal("Login Failed", "Invalid username or password.");
+        }
+      } else {
+        if (userData[username]) {
+          showModal("Signup Failed", "Username already exists.");
+        } else {
+          userData[username] = { password, bio: "", credit: 0 };
+          localStorage.setItem("users", JSON.stringify(userData));
+          showModal("Signup Success", "Account created. You can now log in.");
+          toggleMode();
+        }
+      }
+    });
+
+    function showDashboard(username) {
+      document.getElementById("authSection").classList.add("hidden");
+      document.getElementById("dashboard").classList.remove("hidden");
+      document.getElementById("displayUser").innerText = username;
+      document.getElementById("bio").value = users()[username]?.bio || "";
+      updateCreditDisplay();
+      renderMatches();
+    }
+
+    function logout() {
+      localStorage.removeItem("loggedInUser");
+      location.reload();
+    }
+
+    function saveProfile() {
+      const username = localStorage.getItem("loggedInUser");
+      const bio = document.getElementById("bio").value;
+      const data = users();
+      data[username].bio = bio;
+      localStorage.setItem("users", JSON.stringify(data));
+      showModal("Profile Updated", "Your bio has been saved.");
+    }
+
+    function renderMatches() {
+      const matchList = [
+        { name: "Sharon", age: 25 },
+        { name: "Brian", age: 28 },
+        { name: "Janet", age: 23 },
+      ];
+      const container = document.getElementById("matches");
+      container.innerHTML = "";
+      matchList.forEach(match => {
+        const div = document.createElement("div");
+        div.className = "border p-3 rounded";
+        div.innerHTML = `
+          <p class="font-semibold">${match.name}, ${match.age}</p>
+          <textarea id="msg-${match.name}" placeholder="Send a message..." class="w-full border rounded p-1 my-2"></textarea>
+          <button onclick="sendMessage('${match.name}')" class="bg-pink-500 text-white px-3 py-1 rounded">Send</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function sendMessage(toName) {
+      const username = localStorage.getItem("loggedInUser");
+      const user = users();
+      if (user[username].credit <= 0) {
+        openDepositModal();
+        return;
+      }
+      const msg = document.getElementById("msg-" + toName).value;
+      if (!msg) return showModal("Empty Message", "Please enter a message before sending.");
+      user[username].credit -= 1;
+      localStorage.setItem("users", JSON.stringify(user));
+      updateCreditDisplay();
+      showModal("Message Sent", `Message sent to ${toName}.`);
+      document.getElementById("msg-" + toName).value = "";
+    }
+
+    function updateCreditDisplay() {
+      const username = localStorage.getItem("loggedInUser");
+      if (!username) return;
+      const balance = users()[username]?.credit || 0;
+      document.getElementById("creditBalance").innerText = balance;
+    }
+
+    function openDepositModal() {
+      document.getElementById("depositModal").classList.remove("hidden");
+    }
+
+    function closeDepositModal() {
+      document.getElementById("depositModal").classList.add("hidden");
+    }
+
+    function verifyDeposit() {
+      const code = document.getElementById("codeInput").value;
+      if (code === "1234") {
+        const username = localStorage.getItem("loggedInUser");
+        const user = users();
+        user[username].credit += 5;
+        localStorage.setItem("users", JSON.stringify(user));
+        updateCreditDisplay();
+        closeDepositModal();
+        showModal("Deposit Successful", "$5 credited to your wallet.");
+      } else {
+        showModal("Invalid Code", "Please enter a valid payment confirmation code.");
+      }
+    }
+
+    function showModal(title, message) {
+      document.getElementById("modalTitle").innerText = title || "Notice";
+      document.getElementById("modalMessage").innerText = message || "Something happened.";
+      document.getElementById("feedbackModal").classList.remove("hidden");
+    }
+
+    function closeFeedbackModal() {
+      document.getElementById("feedbackModal").classList.add("hidden");
+    }
+
+    window.onload = () => {
+      const username = localStorage.getItem("loggedInUser");
+      if (username && users()[username]) {
+        showDashboard(username);
+      }
+    };
+  </script>
+</body>
+</html>
