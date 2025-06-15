@@ -19,31 +19,45 @@
 </head>
 <body class="text-white font-sans">
   <div class="max-w-md mx-auto px-4 py-6">
+    <!-- Balance and Credit Bar -->
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <div class="text-sm text-gray-300">Balance</div>
+        <div class="text-xl font-bold">$<span id="userBalance">0</span></div>
+      </div>
+      <div>
+        <div class="text-sm text-gray-300">Credit</div>
+        <div class="text-xl font-bold"><span id="userCredit">0</span> Credits</div>
+      </div>
+      <div class="flex space-x-2">
+        <button onclick="depositCredit()" class="bg-green-600 px-3 py-1 rounded">Deposit</button>
+        <button onclick="withdrawCredit()" class="bg-blue-600 px-3 py-1 rounded">Withdraw</button>
+      </div>
+    </div>
+
     <!-- Welcome + Profile -->
-    <div class="flex items-center space-x-4">
+    <div class="flex items-center space-x-4 mb-6">
       <img id="profilePicture" src="https://via.placeholder.com/40" alt="User" class="h-10 w-10 rounded-full object-cover">
       <button onclick="openProfileModal()" class="bg-green-700 px-3 py-2 rounded-full text-sm">Welcome, <span id="userNameDisplay">User</span> 👋</button>
     </div>
 
     <!-- Profile Edit Modal -->
-    <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center hidden">
+    <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center hidden z-10">
       <div class="bg-white text-black p-4 rounded-lg w-80 space-y-3">
         <h2 class="font-bold text-lg">Edit Profile</h2>
         <input type="text" id="userName" placeholder="Name" class="w-full border rounded p-2">
         <input type="number" id="userAge" placeholder="Age" class="w-full border rounded p-2">
         <input type="text" id="userCountry" placeholder="Country" class="w-full border rounded p-2">
-        <input type="text" id="userHeight" placeholder="Height (e.g. 5'9)"> 
-        <input type="url" id="userPhoto" placeholder="Profile Photo URL" class="w-full border rounded p-2">
+        <input type="text" id="userHeight" placeholder="Height (e.g. 5'9)" class="w-full border rounded p-2"> 
+        <input type="file" id="userPhotoUpload" accept="image/*" class="w-full">
         <button onclick="saveProfile()" class="bg-green-700 text-white px-4 py-2 rounded w-full">Save</button>
         <button onclick="closeProfileModal()" class="text-sm text-red-600">Cancel</button>
       </div>
     </div>
 
     <!-- Matches List -->
-    <div class="mt-6 space-y-4">
-      <h2 class="font-bold text-lg">People You May Like</h2>
-      <div id="matches"></div>
-    </div>
+    <h2 class="font-bold text-lg mb-4">People You May Like</h2>
+    <div id="matches" class="space-y-6"></div>
   </div>
 
   <script>
@@ -52,20 +66,15 @@
       {name: "Mike", age: 30, country: "USA", photo: "https://randomuser.me/api/portraits/men/2.jpg"},
       {name: "Lina", age: 28, country: "Germany", photo: "https://randomuser.me/api/portraits/women/3.jpg"},
       {name: "Kevin", age: 26, country: "UK", photo: "https://randomuser.me/api/portraits/men/4.jpg"},
-      {name: "Nadia", age: 22, country: "Nigeria", photo: "https://randomuser.me/api/portraits/women/5.jpg"},
-      {name: "James", age: 31, country: "Canada", photo: "https://randomuser.me/api/portraits/men/6.jpg"},
-      {name: "Aisha", age: 29, country: "South Africa", photo: "https://randomuser.me/api/portraits/women/6.jpg"},
-      {name: "Omar", age: 27, country: "UAE", photo: "https://randomuser.me/api/portraits/men/7.jpg"},
-      {name: "Grace", age: 25, country: "Ghana", photo: "https://randomuser.me/api/portraits/women/8.jpg"},
-      {name: "Brian", age: 32, country: "Australia", photo: "https://randomuser.me/api/portraits/men/9.jpg"},
+      {name: "Nadia", age: 22, country: "Nigeria", photo: "https://randomuser.me/api/portraits/women/5.jpg"}
     ];
 
     function displayMatches() {
       const container = document.getElementById('matches');
       container.innerHTML = '';
-      matchesData.forEach(match => {
+      matchesData.forEach((match, index) => {
         container.innerHTML += `
-          <div class="bg-gray-800 rounded-lg p-3">
+          <div class="bg-gray-800 rounded-lg p-3 space-y-2">
             <div class="flex items-center space-x-3">
               <img src="${match.photo}" class="w-12 h-12 rounded-full object-cover">
               <div>
@@ -73,10 +82,30 @@
                 <div class="text-sm text-gray-400">${match.age}, ${match.country}</div>
               </div>
             </div>
-            <textarea placeholder="Send a message..." class="mt-2 w-full rounded p-2 text-black" rows="2"></textarea>
+            <div class="flex items-center space-x-2">
+              <textarea id="msg-${index}" placeholder="Send a message..." class="flex-1 rounded p-2 text-black resize-none" rows="1"></textarea>
+              <button onclick="sendMessage(${index})" class="bg-green-500 p-2 rounded">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10l11 2-11 2v4l18-6L3 6v4z" />
+                </svg>
+              </button>
+            </div>
           </div>
         `;
       });
+    }
+
+    function sendMessage(index) {
+      const credit = parseInt(localStorage.getItem('userCredit') || '0');
+      if (credit < 1) {
+        alert('You need at least 1 credit to send a message.');
+        return;
+      }
+      localStorage.setItem('userCredit', credit - 1);
+      document.getElementById('userCredit').innerText = credit - 1;
+      const message = document.getElementById(`msg-${index}`).value;
+      alert('Message sent: ' + message);
+      document.getElementById(`msg-${index}`).value = '';
     }
 
     function openProfileModal() {
@@ -92,10 +121,23 @@
       const age = document.getElementById('userAge').value;
       const country = document.getElementById('userCountry').value;
       const height = document.getElementById('userHeight').value;
-      const photo = document.getElementById('userPhoto').value;
-      localStorage.setItem('userProfile', JSON.stringify({ name, age, country, height, photo }));
-      applyUserProfile();
-      closeProfileModal();
+      const file = document.getElementById('userPhotoUpload').files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const photo = e.target.result;
+        const profile = { name, age, country, height, photo };
+        localStorage.setItem('userProfile', JSON.stringify(profile));
+        applyUserProfile();
+        closeProfileModal();
+      };
+      if (file) reader.readAsDataURL(file);
+      else {
+        const photo = document.getElementById('profilePicture').src;
+        const profile = { name, age, country, height, photo };
+        localStorage.setItem('userProfile', JSON.stringify(profile));
+        applyUserProfile();
+        closeProfileModal();
+      }
     }
 
     function applyUserProfile() {
@@ -107,13 +149,40 @@
         document.getElementById('userAge').value = profile.age;
         document.getElementById('userCountry').value = profile.country;
         document.getElementById('userHeight').value = profile.height;
-        document.getElementById('userPhoto').value = profile.photo;
+      }
+    }
+
+    function depositCredit() {
+      let balance = parseFloat(localStorage.getItem('userBalance') || '0');
+      let credit = parseInt(localStorage.getItem('userCredit') || '0');
+      balance += 5;
+      credit += 5;
+      localStorage.setItem('userBalance', balance);
+      localStorage.setItem('userCredit', credit);
+      document.getElementById('userBalance').innerText = balance.toFixed(2);
+      document.getElementById('userCredit').innerText = credit;
+    }
+
+    function withdrawCredit() {
+      let balance = parseFloat(localStorage.getItem('userBalance') || '0');
+      let credit = parseInt(localStorage.getItem('userCredit') || '0');
+      if (credit >= 1) {
+        credit -= 1;
+        balance -= 1;
+        localStorage.setItem('userBalance', balance);
+        localStorage.setItem('userCredit', credit);
+        document.getElementById('userBalance').innerText = balance.toFixed(2);
+        document.getElementById('userCredit').innerText = credit;
+      } else {
+        alert('Not enough credit to withdraw.');
       }
     }
 
     window.addEventListener('load', () => {
       applyUserProfile();
       displayMatches();
+      document.getElementById('userBalance').innerText = (parseFloat(localStorage.getItem('userBalance')) || 0).toFixed(2);
+      document.getElementById('userCredit').innerText = parseInt(localStorage.getItem('userCredit') || '0');
     });
   </script>
 </body>
