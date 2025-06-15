@@ -232,31 +232,33 @@
     } else {
       showMessage("Error", "Invalid withdrawal.");
     }
- function processTransfer() {
-  const amount = parseFloat(document.getElementById("transferAmount").value);
-  let balance = parseFloat(localStorage.getItem("balance")) || 0;
-  let credit = parseInt(localStorage.getItem("credit")) || 0;
-
-  if (isNaN(amount) || amount <= 0) {
-    showMessage("Invalid Amount", "Please enter a valid amount.");
-    return;
   }
 
-  if (amount > balance) {
-    showMessage("Insufficient Funds", "You don't have enough balance to transfer this amount.");
-    return;
+  function processTransfer() {
+    const amount = parseFloat(document.getElementById("transferAmount").value);
+    let balance = parseFloat(localStorage.getItem("balance")) || 0;
+    let credit = parseInt(localStorage.getItem("credit")) || 0;
+
+    if (isNaN(amount) || amount <= 0) {
+      showMessage("Invalid Amount", "Please enter a valid amount.");
+      return;
+    }
+
+    if (amount > balance) {
+      showMessage("Insufficient Funds", "You don't have enough balance to transfer this amount.");
+      return;
+    }
+
+    balance -= amount;
+    credit += Math.floor(amount * 3); // $1 = 3 credits
+
+    localStorage.setItem("balance", balance.toFixed(2));
+    localStorage.setItem("credit", credit);
+
+    updateDisplayedValues(); // Fixed: correct function name
+    closeAllModals();
+    showMessage("Success", "Funds transferred to credit!");
   }
-
-  balance -= amount;
-  credit += Math.floor(amount * 3); // $1 = 3 credits
-
-  localStorage.setItem("balance", balance.toFixed(2));
-  localStorage.setItem("credit", credit);
-
-  updateDisplayedValues(); // ← Correct function name here
-  closeAllModals();
-  showMessage("Success", "Funds transferred to credit!");
-}
 
   function updateDisplayedValues() {
     const balance = parseFloat(localStorage.getItem("balance")) || 0;
@@ -293,7 +295,6 @@
 
   window.addEventListener("load", updateDisplayedValues);
 </script>
-
 
 </body>
 </html>
