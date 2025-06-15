@@ -98,23 +98,24 @@
 </div>
 
 <!-- Withdraw Modal -->
-<div id="withdrawModal" class="hidden modal-bg">
-  <div class="modal">
-    <h2 class="text-lg font-bold mb-4">Withdraw Funds</h2>
-    <input type="text" id="withdrawCode" placeholder="Enter security code" class="w-full p-2 rounded text-black mt-2" />
-    <input type="number" id="withdrawAmount" placeholder="Amount" class="w-full p-2 rounded text-black mt-2" />
-    <button onclick="processWithdraw()" class="bg-red-600 w-full py-2 mt-2 rounded">Confirm</button>
-    <button class="mt-2 text-sm text-gray-300" onclick="closeAllModals()">Cancel</button>
-  </div>
-</div>
+<!-- Buttons Row -->
+<div class="flex space-x-2 mt-4">
+  <!-- Withdraw Button -->
+  <button onclick="openWithdrawModal()" class="flex-1 flex items-center justify-center bg-white text-red-600 font-semibold px-4 py-2 rounded-full">
+    <svg class="w-4 h-4 mr-2 rotate-45" fill="currentColor" viewBox="0 0 20 20">
+      <path d="M10 5a1 1 0 011 1v4h4a1 1 0 010 2h-4v4a1 1 0 01-2 0v-4H5a1 1 0 010-2h4V6a1 1 0 011-1z" />
+    </svg>
+    Withdraw
+  </button>
 
   <!-- Credit Button -->
-<button onclick="openCreditModal()" class="flex items-center bg-white text-blue-700 font-semibold px-4 py-2 rounded-full mt-2 w-full">
-  <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-    <path d="M10 5a1 1 0 00-1 1v4H5a1 1 0 000 2h4v4a1 1 0 002 0v-4h4a1 1 0 000-2h-4V6a1 1 0 00-1-1z" />
-  </svg>
-  Convert to Credit
-</button>
+  <button onclick="openCreditModal()" class="flex-1 flex items-center justify-center bg-white text-blue-700 font-semibold px-4 py-2 rounded-full">
+    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+      <path d="M10 5a1 1 0 00-1 1v4H5a1 1 0 000 2h4v4a1 1 0 002 0v-4h4a1 1 0 000-2h-4V6a1 1 0 00-1-1z" />
+    </svg>
+    Credit
+  </button>
+</div>
 
   <!-- Credit Modal -->
 <div id="creditModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50">
