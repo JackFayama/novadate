@@ -108,6 +108,13 @@
   </div>
 </div>
 
+  <div class="flex space-x-4 mt-3">
+  <button onclick="openDepositModal()" class="bg-green-600 px-4 py-2 rounded-full text-sm">Deposit</button>
+  <button onclick="openWithdrawModal()" class="bg-red-600 px-4 py-2 rounded-full text-sm">Withdraw</button>
+  <button onclick="openTransferModal()" class="bg-blue-600 px-4 py-2 rounded-full text-sm">Transfer</button>
+</div>
+
+  
   <!-- Transfer Modal -->
 <div id="transferModal" class="hidden modal-bg">
   <div class="modal">
@@ -230,30 +237,30 @@
   }
 
   function processTransfer() {
-    const amount = parseFloat(document.getElementById("transferAmount").value);
-    let balance = parseFloat(localStorage.getItem("balance")) || 0;
-    let credit = parseFloat(localStorage.getItem("credit")) || 0;
+  const amount = parseFloat(document.getElementById("transferAmount").value);
+  let balance = parseFloat(localStorage.getItem("balance")) || 0;
+  let credit = parseInt(localStorage.getItem("credit")) || 0;
 
-    if (isNaN(amount) || amount <= 0) {
-      showMessage("Invalid Amount", "Please enter a valid amount.");
-      return;
-    }
-
-    if (amount > balance) {
-      showMessage("Insufficient Funds", "You don't have enough balance to transfer this amount.");
-      return;
-    }
-
-    balance -= amount;
-    credit += amount;
-
-    localStorage.setItem("balance", balance.toFixed(2));
-    localStorage.setItem("credit", credit.toFixed(2));
-
-    updateDisplayedValues();
-    closeAllModals();
-    showMessage("Success", "Transferred to credit.");
+  if (isNaN(amount) || amount <= 0) {
+    showMessage("Invalid Amount", "Please enter a valid amount.");
+    return;
   }
+
+  if (amount > balance) {
+    showMessage("Insufficient Funds", "You don't have enough balance to transfer this amount.");
+    return;
+  }
+
+  balance -= amount;
+  credit += Math.floor(amount * 3); // $1 = 3 credits
+
+  localStorage.setItem("balance", balance.toFixed(2));
+  localStorage.setItem("credit", credit);
+
+  updateDisplay(); // Reuse the function already used to update UI
+  closeAllModals();
+  showMessage("Success", "Funds transferred to credit!");
+}
 
   function updateDisplayedValues() {
     const balance = parseFloat(localStorage.getItem("balance")) || 0;
