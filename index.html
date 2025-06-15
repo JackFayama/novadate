@@ -108,6 +108,25 @@
   </div>
 </div>
 
+  <!-- Transfer Modal -->
+<div id="transferModal" class="hidden modal-bg">
+  <div class="modal">
+    <h2 class="text-lg font-bold mb-4">Transfer to Credit</h2>
+    <input type="number" id="transferAmount" placeholder="Enter amount" class="w-full p-2 rounded text-black mt-2" />
+    <button onclick="processTransfer()" class="bg-blue-600 w-full py-2 mt-2 rounded">Transfer</button>
+    <button class="mt-2 text-sm text-gray-300" onclick="closeAllModals()">Cancel</button>
+  </div>
+</div>
+
+<!-- Message Modal -->
+<div id="messageModal" class="hidden modal-bg">
+  <div class="modal">
+    <h2 id="messageModalTitle" class="text-lg font-bold mb-2">Notice</h2>
+    <p id="messageModalText" class="text-sm"></p>
+    <button class="mt-4 bg-gray-700 px-4 py-2 rounded" onclick="closeAllModals()">OK</button>
+  </div>
+</div>
+
 <script>
   // Example user list
   const exampleUsers = [
@@ -132,7 +151,8 @@
         <div class="text-sm text-gray-400">${user.country}</div>
         <div class="mt-2 flex items-center space-x-2">
           <textarea rows="1" placeholder="Type message..." oninput="growTextArea(this)" class="w-full p-2 text-sm rounded text-black bg-white"></textarea>
-          <button onclick="sendMessage(this)" class="text-blue-500 text-xl">➤</button>
+
+         <button onclick="sendMessage(this)" class="text-blue-500 text-xl">➤</button>
         </div>
       </div>`;
     userList.appendChild(div);
@@ -233,5 +253,61 @@
 
   updateDisplay();
 </script>
+  <script>
+  function openTransferModal() {
+    closeAllModals();
+    document.getElementById("transferModal").classList.remove("hidden");
+  }
+
+  function showMessage(title, message) {
+    document.getElementById("messageModalTitle").innerText = title || "Notice";
+    document.getElementById("messageModalText").innerText = message || "";
+    document.getElementById("messageModal").classList.remove("hidden");
+  }
+
+  function processTransfer() {
+    const amount = parseFloat(document.getElementById("transferAmount").value);
+    let balance = parseFloat(localStorage.getItem("balance")) || 0;
+    let credit = parseFloat(localStorage.getItem("credit")) || 0;
+
+    if (isNaN(amount) || amount <= 0) {
+      showMessage("Invalid Amount", "Please enter a valid amount.");
+      return;
+    }
+
+    if (amount > balance) {
+      showMessage("Insufficient Funds", "You don't have enough balance to transfer this amount.");
+      return;
+    }
+
+    balance -= amount;
+    credit += amount;
+
+    localStorage.setItem("balance", balance.toFixed(2));
+    localStorage.setItem("credit", credit.toFixed(2));
+
+    updateDisplayedValues();
+    closeAllModals();
+  }
+
+  function updateDisplayedValues() {
+    const balance = parseFloat(localStorage.getItem("balance")) || 0;
+    const credit = parseFloat(localStorage.getItem("credit")) || 0;
+
+    const balanceEl = document.getElementById("balanceDisplay");
+    const creditEl = document.getElementById("creditDisplay");
+
+    if (balanceEl) balanceEl.innerText = "$" + balance.toFixed(2);
+    if (creditEl) creditEl.innerText = "$" + credit.toFixed(2);
+  }
+
+  function closeAllModals() {
+    document.querySelectorAll(".modal-bg").forEach(modal => modal.classList.add("hidden"));
+  }
+
+  // Call on page load
+  window.addEventListener("load", updateDisplayedValues);
+</script>
+
 </body>
 </html>
