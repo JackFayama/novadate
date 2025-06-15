@@ -37,36 +37,39 @@
   </style>
 </head>
 <body>
-<div class="max-w-md mx-auto p-4">
-  <!-- User Header -->
-  <div class="flex items-center justify-between mb-4">
+<div class="max-w-4xl mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+  <!-- Left Sidebar for User Info -->
+  <div class="md:col-span-1 space-y-4">
+    <!-- User Header -->
     <div class="flex items-center space-x-3 cursor-pointer" onclick="openProfileModal()">
       <img id="userPhoto" src="default.jpg" alt="User" class="w-12 h-12 rounded-full object-cover">
       <div class="text-white font-bold text-lg" id="userName">Welcome!</div>
     </div>
+
+    <!-- Balance & Credit -->
+    <div class="bg-gray-800 p-4 rounded-xl space-y-2">
+      <div class="flex justify-between text-sm">
+        <span>Balance:</span>
+        <span id="balance">$0.00</span>
+      </div>
+      <div class="flex justify-between text-sm">
+        <span>Credit:</span>
+        <span id="credit">0</span>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-3">
+        <button onclick="openDepositModal()" class="bg-green-600 px-4 py-2 rounded-full text-sm">Deposit</button>
+        <button onclick="openWithdrawModal()" class="bg-red-600 px-4 py-2 rounded-full text-sm">Withdraw</button>
+        <button onclick="openTransferModal()" class="bg-blue-600 px-4 py-2 rounded-full text-sm">Transfer</button>
+      </div>
+    </div>
   </div>
 
-  <!-- Balance & Credit -->
-  <div class="bg-gray-800 p-4 rounded-xl space-y-2">
-    <div class="flex justify-between text-sm">
-      <span>Balance:</span>
-      <span id="balance">$0.00</span>
+  <!-- Main Content -->
+  <div class="md:col-span-2">
+    <h2 class="mt-6 mb-2 text-white font-semibold text-xl">People You May Know</h2>
+    <div id="userList" class="space-y-4">
+      <!-- Example User Cards Will Be Injected Here -->
     </div>
-    <div class="flex justify-between text-sm">
-      <span>Credit:</span>
-      <span id="credit">0</span>
-    </div>
-    <div class="flex space-x-4 mt-3">
-  <button onclick="openDepositModal()" class="bg-green-600 px-4 py-2 rounded-full text-sm">Deposit</button>
-  <button onclick="openWithdrawModal()" class="bg-red-600 px-4 py-2 rounded-full text-sm">Withdraw</button>
-  <button onclick="openTransferModal()" class="bg-blue-600 px-4 py-2 rounded-full text-sm">Transfer</button>
-    </div>
-  </div>
-
-  <!-- People You May Know -->
-  <h2 class="mt-6 mb-2 text-white font-semibold">People You May Know</h2>
-  <div id="userList" class="space-y-4">
-    <!-- Example User Card -->
   </div>
 </div>
 
