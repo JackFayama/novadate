@@ -37,46 +37,42 @@
   </style>
 </head>
 <body class="overflow-x-hidden">
-  <!-- Fixed Top Section -->
-  <div class="fixed w-full z-50 bg-[#111827] pb-4">
-    <div class="max-w-7xl mx-auto px-4 md:flex md:space-x-8">
-      <!-- Sidebar -->
-      <div class="md:w-3/4 space-y-4">
-        <!-- User Header -->
-        <div class="flex items-center space-x-3 cursor-pointer pt-4" onclick="openProfileModal()">
-          <img id="userPhoto" src="default.jpg" alt="User" class="w-12 h-12 rounded-full object-cover">
-          <div class="text-white font-bold text-lg" id="userName">Welcome!</div>
-        </div>
+<div class="max-w-7xl mx-auto">
+  <!-- Fixed Header Section -->
+  <div class="bg-[#111827] fixed top-0 left-0 w-full z-40 pb-2">
+    <div class="flex items-center space-x-3 px-4 pt-4 cursor-pointer" onclick="openProfileModal()">
+      <img id="userPhoto" src="default.jpg" alt="User" class="w-12 h-12 rounded-full object-cover">
+      <div class="text-white font-bold text-lg" id="userName">Welcome!</div>
+    </div>
 
-        <!-- Balance & Credit -->
-        <div class="bg-gray-800 p-4 rounded-xl space-y-2 w-full md:w-[75%]">
-          <div class="flex justify-between text-sm">
-            <span>Balance:</span>
-            <span id="balance">$0.00</span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span>Credit:</span>
-            <span id="credit">0</span>
-          </div>
-          <div class="flex flex-wrap gap-2 mt-3">
-            <button onclick="openDepositModal()" class="bg-green-600 px-4 py-2 rounded-full text-sm">Deposit</button>
-            <button onclick="openWithdrawModal()" class="bg-red-600 px-4 py-2 rounded-full text-sm">Withdraw</button>
-            <button onclick="openTransferModal()" class="bg-blue-600 px-4 py-2 rounded-full text-sm">Transfer</button>
-          </div>
-        </div>
+    <div class="bg-gray-800 mx-4 mt-2 p-4 rounded-xl space-y-2 max-w-[700px]">
+      <div class="flex justify-between text-sm">
+        <span>Balance:</span>
+        <span id="balance">$0.00</span>
+      </div>
+      <div class="flex justify-between text-sm">
+        <span>Credit:</span>
+        <span id="credit">0</span>
+      </div>
+      <div class="flex space-x-4 mt-3 flex-wrap">
+        <button onclick="openDepositModal()" class="bg-green-600 px-4 py-2 rounded-full text-sm">Deposit</button>
+        <button onclick="openWithdrawModal()" class="bg-red-600 px-4 py-2 rounded-full text-sm">Withdraw</button>
+        <button onclick="openTransferModal()" class="bg-blue-600 px-4 py-2 rounded-full text-sm">Transfer</button>
       </div>
     </div>
+
     <h2 class="text-white font-semibold text-lg mt-4 px-4">People You May Know</h2>
   </div>
 
-  <!-- Main Content -->
-  <div class="pt-[240px] px-4 max-w-7xl mx-auto">
+  <!-- Content Padding to Account for Fixed Header -->
+  <div class="pt-[260px] px-4">
     <div id="userList" class="grid gap-4 md:grid-cols-4">
       <!-- Example User Card -->
     </div>
   </div>
+</div>
 
-<!-- Modals -->
+<!-- Profile Edit Modal -->
 <div id="profileModal" class="hidden modal-bg">
   <div class="modal">
     <h2 class="text-lg font-bold mb-4">Edit Profile</h2>
@@ -92,6 +88,7 @@
   </div>
 </div>
 
+<!-- Deposit Modal -->
 <div id="depositModal" class="hidden modal-bg">
   <div class="modal">
     <h2 class="text-lg font-bold mb-4">Deposit Funds</h2>
@@ -103,6 +100,7 @@
   </div>
 </div>
 
+<!-- Withdraw Modal -->
 <div id="withdrawModal" class="hidden modal-bg">
   <div class="modal">
     <h2 class="text-lg font-bold mb-4">Withdraw Funds</h2>
@@ -113,6 +111,7 @@
   </div>
 </div>
 
+<!-- Transfer Modal -->
 <div id="transferModal" class="hidden modal-bg">
   <div class="modal">
     <h2 class="text-lg font-bold mb-4">Transfer to Credit</h2>
@@ -123,6 +122,7 @@
   </div>
 </div>
 
+<!-- Message Modal -->
 <div id="messageModal" class="hidden modal-bg">
   <div class="modal">
     <h2 id="messageModalTitle" class="text-lg font-bold mb-2">Notice</h2>
