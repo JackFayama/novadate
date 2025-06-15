@@ -232,9 +232,7 @@
     } else {
       showMessage("Error", "Invalid withdrawal.");
     }
-  }
-
-  function processTransfer() {
+ function processTransfer() {
   const amount = parseFloat(document.getElementById("transferAmount").value);
   let balance = parseFloat(localStorage.getItem("balance")) || 0;
   let credit = parseInt(localStorage.getItem("credit")) || 0;
@@ -255,7 +253,7 @@
   localStorage.setItem("balance", balance.toFixed(2));
   localStorage.setItem("credit", credit);
 
-  updateDisplay(); // Reuse the function already used to update UI
+  updateDisplayedValues(); // ← Correct function name here
   closeAllModals();
   showMessage("Success", "Funds transferred to credit!");
 }
