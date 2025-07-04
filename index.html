@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zuri Love - Complete Dating Web App</title>
+    <title>Zuri Love - Find Your Perfect Match</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
@@ -42,13 +42,19 @@
             transform: translateY(-4px);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
+        .line-clamp-2 {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
     <div id="app"></div>
 
     <script>
-        // Initialize EmailJS
+        // Initialize EmailJS with your public key
         emailjs.init('LMdaXNTSTm33O5BqT');
 
         // Global state
@@ -56,11 +62,16 @@
         let currentView = 'auth';
         let selectedMatch = null;
         let showBuyCredits = false;
-        let showNotification = false;
+        let showNotifications = false;
         let showUserMenu = false;
-        let currentNotification = null;
+        let showTransactionHistory = false;
+        let showSupport = false;
+        let showAlert = false;
+        let alertMessage = '';
+        let alertType = 'info';
         let matches = [];
         let notifications = [];
+        let transactions = [];
         let isLogin = true;
         let showPassword = false;
         let showCountryDropdown = false;
@@ -73,6 +84,7 @@
         let error = '';
         let profileImage = '';
         let isEditing = false;
+        let uploadPending = false;
 
         // Form data
         let formData = {
@@ -117,49 +129,6 @@
             { code: 'JPY', name: 'Japanese Yen', symbol: '¥', rate: 149.50 },
             { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', rate: 1.52 },
             { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', rate: 1.36 },
-            { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF', rate: 0.88 },
-            { code: 'SEK', name: 'Swedish Krona', symbol: 'kr', rate: 10.85 },
-            { code: 'NOK', name: 'Norwegian Krone', symbol: 'kr', rate: 10.65 },
-            { code: 'DKK', name: 'Danish Krone', symbol: 'kr', rate: 6.85 },
-            { code: 'PLN', name: 'Polish Zloty', symbol: 'zł', rate: 4.15 },
-            { code: 'CZK', name: 'Czech Koruna', symbol: 'Kč', rate: 22.75 },
-            { code: 'HUF', name: 'Hungarian Forint', symbol: 'Ft', rate: 355 },
-            { code: 'RON', name: 'Romanian Leu', symbol: 'lei', rate: 4.65 },
-            { code: 'BGN', name: 'Bulgarian Lev', symbol: 'лв', rate: 1.75 },
-            { code: 'HRK', name: 'Croatian Kuna', symbol: 'kn', rate: 6.85 },
-            { code: 'RUB', name: 'Russian Ruble', symbol: '₽', rate: 92.50 },
-            { code: 'UAH', name: 'Ukrainian Hryvnia', symbol: '₴', rate: 36.85 },
-            { code: 'TRY', name: 'Turkish Lira', symbol: '₺', rate: 27.15 },
-            { code: 'ILS', name: 'Israeli Shekel', symbol: '₪', rate: 3.75 },
-            { code: 'SAR', name: 'Saudi Riyal', symbol: 'SR', rate: 3.75 },
-            { code: 'AED', name: 'UAE Dirham', symbol: 'AED', rate: 3.67 },
-            { code: 'QAR', name: 'Qatari Riyal', symbol: 'QR', rate: 3.64 },
-            { code: 'KWD', name: 'Kuwaiti Dinar', symbol: 'KD', rate: 0.31 },
-            { code: 'BHD', name: 'Bahraini Dinar', symbol: 'BD', rate: 0.38 },
-            { code: 'OMR', name: 'Omani Rial', symbol: 'OMR', rate: 0.38 },
-            { code: 'JOD', name: 'Jordanian Dinar', symbol: 'JD', rate: 0.71 },
-            { code: 'LBP', name: 'Lebanese Pound', symbol: 'L£', rate: 15000 },
-            { code: 'BRL', name: 'Brazilian Real', symbol: 'R$', rate: 5.15 },
-            { code: 'ARS', name: 'Argentine Peso', symbol: '$', rate: 365 },
-            { code: 'CLP', name: 'Chilean Peso', symbol: '$', rate: 885 },
-            { code: 'COP', name: 'Colombian Peso', symbol: '$', rate: 4150 },
-            { code: 'PEN', name: 'Peruvian Sol', symbol: 'S/', rate: 3.75 },
-            { code: 'UYU', name: 'Uruguayan Peso', symbol: '$U', rate: 39.25 },
-            { code: 'MXN', name: 'Mexican Peso', symbol: '$', rate: 17.85 },
-            { code: 'KRW', name: 'South Korean Won', symbol: '₩', rate: 1325 },
-            { code: 'THB', name: 'Thai Baht', symbol: '฿', rate: 35.75 },
-            { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', rate: 1.35 },
-            { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM', rate: 4.65 },
-            { code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp', rate: 15750 },
-            { code: 'PHP', name: 'Philippine Peso', symbol: '₱', rate: 56.25 },
-            { code: 'VND', name: 'Vietnamese Dong', symbol: '₫', rate: 24350 },
-            { code: 'PKR', name: 'Pakistani Rupee', symbol: 'Rs', rate: 285 },
-            { code: 'BDT', name: 'Bangladeshi Taka', symbol: '৳', rate: 110 },
-            { code: 'LKR', name: 'Sri Lankan Rupee', symbol: 'Rs', rate: 325 },
-            { code: 'NPR', name: 'Nepalese Rupee', symbol: 'Rs', rate: 133 },
-            { code: 'AFN', name: 'Afghan Afghani', symbol: '؋', rate: 72.5 },
-            { code: 'IRR', name: 'Iranian Rial', symbol: '﷼', rate: 42000 },
-            { code: 'IQD', name: 'Iraqi Dinar', symbol: 'ع.د', rate: 1310 },
         ];
 
         const COUNTRIES = [
@@ -416,10 +385,18 @@
             setNotifications: (notifications) => {
                 localStorage.setItem('zuri_notifications', JSON.stringify(notifications));
             },
+            getTransactions: () => {
+                const transactions = localStorage.getItem('zuri_transactions');
+                return transactions ? JSON.parse(transactions) : [];
+            },
+            setTransactions: (transactions) => {
+                localStorage.setItem('zuri_transactions', JSON.stringify(transactions));
+            },
         };
 
         // Utility functions
         function hasCreditsOrUnlimited() {
+            if (!currentUser) return false;
             if (currentUser.hasUnlimitedMessages && currentUser.unlimitedUntil && currentUser.unlimitedUntil > Date.now()) {
                 return true;
             }
@@ -429,6 +406,17 @@
         function getLocalPrice() {
             if (!selectedPackage) return 0;
             return (selectedPackage.priceUSD * selectedCurrency.rate).toFixed(2);
+        }
+
+        function showAlertModal(message, type = 'info') {
+            alertMessage = message;
+            alertType = type;
+            showAlert = true;
+            render();
+        }
+
+        function formatDate(timestamp) {
+            return new Date(timestamp).toLocaleDateString() + ' ' + new Date(timestamp).toLocaleTimeString();
         }
 
         // Email functions
@@ -453,8 +441,11 @@
                     templateParams,
                     'LMdaXNTSTm33O5BqT'
                 );
+                
+                showAlertModal('Registration email sent successfully!', 'success');
             } catch (error) {
                 console.error('Failed to send registration email:', error);
+                showAlertModal('Failed to send registration email. Please try again.', 'error');
             }
         }
 
@@ -476,8 +467,11 @@
                     templateParams,
                     'LMdaXNTSTm33O5BqT'
                 );
+                
+                showAlertModal('Payment confirmation email sent!', 'success');
             } catch (error) {
                 console.error('Failed to send payment email:', error);
+                showAlertModal('Payment processed but email failed to send.', 'warning');
             }
         }
 
@@ -488,6 +482,8 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     profileImage = e.target?.result;
+                    uploadPending = true;
+                    showAlertModal('Your photo upload is under review. It will be visible once approved.', 'info');
                     render();
                 };
                 reader.readAsDataURL(file);
@@ -517,41 +513,35 @@
             e.preventDefault();
             error = '';
 
-            // Trim email and password to remove whitespace
             const trimmedEmail = formData.email.trim();
             const trimmedPassword = formData.password.trim();
 
-            // Validate that email is not empty after trimming
             if (!trimmedEmail) {
-                error = 'Email address is required';
-                render();
+                showAlertModal('Email address is required', 'error');
                 return;
             }
 
             if (!trimmedPassword) {
-                error = 'Password is required';
-                render();
+                showAlertModal('Password is required', 'error');
                 return;
             }
 
             const users = storage.getUsers();
 
             if (isLogin) {
-                // Login logic
                 const user = users.find(u => u.email === trimmedEmail && u.password === trimmedPassword);
                 if (user) {
                     storage.setCurrentUser(user);
                     currentUser = user;
                     currentView = 'main';
                     initializeApp();
+                    showAlertModal('Welcome back!', 'success');
                 } else {
-                    error = 'Invalid email or password';
+                    showAlertModal('Invalid email or password', 'error');
                 }
             } else {
-                // Signup logic
                 if (users.find(u => u.email === trimmedEmail)) {
-                    error = 'Email already exists';
-                    render();
+                    showAlertModal('Email already exists', 'error');
                     return;
                 }
 
@@ -569,7 +559,7 @@
                     lookingFor: formData.lookingFor,
                     relationshipType: formData.relationshipType,
                     sex: formData.sex,
-                    profileImage,
+                    profileImage: uploadPending ? '' : profileImage,
                     credits: 5,
                     isOnline: true,
                 };
@@ -579,7 +569,6 @@
                 storage.setCurrentUser(newUser);
                 currentUser = newUser;
                 
-                // Send registration email
                 await sendRegistrationEmail(newUser);
                 
                 currentView = 'main';
@@ -608,13 +597,11 @@
                 return;
             }
 
-            // Find the match and toggle like
             const matchIndex = matches.findIndex(m => m.id === matchId);
             if (matchIndex !== -1) {
                 matches[matchIndex].hasLiked = !matches[matchIndex].hasLiked;
                 storage.setMatches(matches);
                 
-                // Deduct credit if not unlimited
                 if (!currentUser.hasUnlimitedMessages) {
                     currentUser.credits = currentUser.credits - 1;
                     updateCurrentUser(currentUser);
@@ -625,16 +612,28 @@
         }
 
         async function handleBuyCredits(packageId, transactionId) {
-            // Simple validation - in real app, this would verify with payment provider
-            if (transactionId.length >= 8) {
+            if (transactionId === '12345678') {
                 let updatedUser = { ...currentUser };
                 
                 if (packageId === '1') {
                     updatedUser.credits = currentUser.credits + 10;
                 } else if (packageId === '2' || packageId === '3') {
                     updatedUser.hasUnlimitedMessages = true;
-                    updatedUser.unlimitedUntil = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 days
+                    updatedUser.unlimitedUntil = Date.now() + (30 * 24 * 60 * 60 * 1000);
                 }
+                
+                // Add transaction record
+                const transaction = {
+                    id: Date.now().toString(),
+                    packageName: selectedPackage.name,
+                    amount: `${selectedCurrency.symbol}${getLocalPrice()}`,
+                    transactionId: transactionId,
+                    date: Date.now(),
+                    status: 'Completed'
+                };
+                
+                transactions.push(transaction);
+                storage.setTransactions(transactions);
                 
                 updateCurrentUser(updatedUser);
                 return true;
@@ -644,8 +643,7 @@
 
         async function handlePayment() {
             if (!transactionId.trim()) {
-                error = 'Please enter transaction ID';
-                render();
+                showAlertModal('Please enter transaction ID', 'error');
                 return;
             }
 
@@ -653,7 +651,6 @@
             const success = await handleBuyCredits(selectedPackage.id, transactionId);
             
             if (success) {
-                // Send payment email
                 await sendPaymentEmail(selectedPackage, getLocalPrice(), transactionId);
                 
                 showSuccess = true;
@@ -666,30 +663,37 @@
                     render();
                 }, 3000);
             } else {
-                error = 'Invalid transaction ID. Please check and try again.';
+                showAlertModal('Invalid transaction ID. Please use: 12345678', 'error');
             }
             render();
         }
 
-        function handleNotificationAction(action) {
-            switch (action) {
-                case 'view_message':
-                case 'view_like':
-                    if (hasCreditsOrUnlimited()) {
-                        const matchId = currentNotification?.data?.matchId;
-                        const match = matches.find(m => m.id === matchId);
-                        if (match) {
-                            handleOpenChat(match);
-                        }
-                    } else {
-                        showBuyCredits = true;
+        function handleNotificationAction(notificationId) {
+            const notification = notifications.find(n => n.id === notificationId);
+            if (notification) {
+                if (hasCreditsOrUnlimited() && notification.data?.matchId) {
+                    const match = matches.find(m => m.id === notification.data.matchId);
+                    if (match) {
+                        handleOpenChat(match);
                     }
-                    break;
-                case 'buy_credits':
+                } else {
                     showBuyCredits = true;
-                    break;
+                }
+                
+                // Mark notification as read
+                const notificationIndex = notifications.findIndex(n => n.id === notificationId);
+                if (notificationIndex !== -1) {
+                    notifications[notificationIndex].isRead = true;
+                    storage.setNotifications(notifications);
+                }
             }
-            showNotification = false;
+            showNotifications = false;
+            render();
+        }
+
+        function markAllNotificationsRead() {
+            notifications.forEach(n => n.isRead = true);
+            storage.setNotifications(notifications);
             render();
         }
 
@@ -697,7 +701,6 @@
             currentUser = user;
             storage.setCurrentUser(user);
             
-            // Also update the user in the users array
             const users = storage.getUsers();
             const updatedUsers = users.map(u => u.id === user.id ? user : u);
             storage.setUsers(updatedUsers);
@@ -707,6 +710,7 @@
             storage.setCurrentUser(null);
             currentUser = null;
             currentView = 'auth';
+            showAlertModal('You have been logged out successfully', 'info');
             render();
         }
 
@@ -717,10 +721,12 @@
                 age: parseInt(editFormData.age),
                 height: editFormData.height,
                 country: editFormData.country,
-                profileImage,
+                profileImage: uploadPending ? currentUser.profileImage : profileImage,
             };
             updateCurrentUser(updatedUser);
             isEditing = false;
+            uploadPending = false;
+            showAlertModal('Profile updated successfully!', 'success');
             render();
         }
 
@@ -733,15 +739,14 @@
             };
             profileImage = currentUser.profileImage || '';
             isEditing = false;
+            uploadPending = false;
             render();
         }
 
         // Initialize app
         function initializeApp() {
-            // Filter matches based on user preferences
             const filteredMatches = FAKE_MATCHES.filter(match => match.sex === currentUser.lookingFor);
             
-            // Sort matches: online first, then by last activity, then those with messages
             const sortedMatches = filteredMatches.sort((a, b) => {
                 if (a.isOnline && !b.isOnline) return -1;
                 if (!a.isOnline && b.isOnline) return 1;
@@ -753,14 +758,15 @@
             matches = sortedMatches;
             storage.setMatches(sortedMatches);
 
-            // Initialize notifications
             const storedNotifications = storage.getNotifications();
             notifications = storedNotifications;
 
-            // Only create notifications if there are matches available
+            const storedTransactions = storage.getTransactions();
+            transactions = storedTransactions;
+
             if (sortedMatches.length > 0) {
-                // Simulate notifications at intervals
-                const notificationIntervals = [36000, 44000, 52000, 61000]; // 36s, 44s, 52s, 61s
+                // Longer intervals: 5 minutes, 8 minutes, 12 minutes, 15 minutes
+                const notificationIntervals = [300000, 480000, 720000, 900000];
                 
                 notificationIntervals.forEach((interval, index) => {
                     setTimeout(() => {
@@ -792,20 +798,16 @@
                         
                         notifications = [...notifications, newNotification];
                         storage.setNotifications(notifications);
-                        
-                        currentNotification = newNotification;
-                        showNotification = true;
                         render();
                     }, interval);
                 });
             }
 
-            // Shuffle matches every 2 minutes
+            // Shuffle matches every 10 minutes
             setInterval(() => {
                 const onlineWithMessages = matches.filter(m => m.isOnline || m.unreadCount > 0);
                 const others = matches.filter(m => !m.isOnline && m.unreadCount === 0);
                 
-                // Shuffle others array
                 for (let i = others.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [others[i], others[j]] = [others[j], others[i]];
@@ -813,7 +815,7 @@
                 
                 matches = [...onlineWithMessages, ...others];
                 render();
-            }, 120000); // 2 minutes
+            }, 600000); // 10 minutes
         }
 
         // Render functions
@@ -833,12 +835,6 @@
                                     ${isLogin ? 'Welcome back!' : 'Find your perfect match'}
                                 </p>
                             </div>
-
-                            ${error ? `
-                                <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                                    <p class="text-red-600 text-sm">${error}</p>
-                                </div>
-                            ` : ''}
 
                             <form onsubmit="handleSubmit(event)" class="space-y-4">
                                 <input
@@ -900,7 +896,6 @@
                                         />
                                     </div>
 
-                                    <!-- Country Dropdown -->
                                     <div class="relative">
                                         <button
                                             type="button"
@@ -931,7 +926,6 @@
                                         ` : ''}
                                     </div>
 
-                                    <!-- Phone Number -->
                                     <div class="flex gap-2">
                                         <div class="w-20">
                                             <input
@@ -955,7 +949,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Sex -->
                                     <select
                                         value="${formData.sex}"
                                         onchange="formData.sex = this.value"
@@ -967,7 +960,6 @@
                                         <option value="female">Female</option>
                                     </select>
 
-                                    <!-- Looking For -->
                                     <select
                                         value="${formData.lookingFor}"
                                         onchange="formData.lookingFor = this.value"
@@ -979,7 +971,6 @@
                                         <option value="female">Women</option>
                                     </select>
 
-                                    <!-- Relationship Status -->
                                     <select
                                         value="${formData.relationshipStatus}"
                                         onchange="formData.relationshipStatus = this.value"
@@ -993,7 +984,6 @@
                                         <option value="separated">Separated</option>
                                     </select>
 
-                                    <!-- Relationship Type -->
                                     <select
                                         value="${formData.relationshipType}"
                                         onchange="formData.relationshipType = this.value"
@@ -1032,6 +1022,7 @@
                                             <p class="text-sm text-gray-600">
                                                 ${profileImage ? 'Change photo' : 'Upload profile photo'}
                                             </p>
+                                            ${uploadPending ? '<p class="text-xs text-orange-600 mt-1">Upload under review</p>' : ''}
                                         </label>
                                     </div>
                                 ` : ''}
@@ -1075,192 +1066,116 @@
                                 </div>
                                 
                                 <div class="flex items-center gap-4">
-                                    <!-- Desktop view -->
-                                    <div class="hidden md:flex items-center gap-4">
-                                        <div class="flex items-center gap-2 gradient-button text-white px-4 py-2 rounded-full">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                                                <line x1="1" y1="10" x2="23" y2="10"/>
-                                            </svg>
-                                            <span class="font-semibold">
-                                                ${currentUser.hasUnlimitedMessages && currentUser.unlimitedUntil && currentUser.unlimitedUntil > Date.now() 
-                                                    ? '∞' 
-                                                    : currentUser.credits
-                                                }
+                                    <button
+                                        onclick="showNotifications = true; render()"
+                                        class="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors relative"
+                                        title="Notifications"
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                                        </svg>
+                                        ${unreadNotifications > 0 ? `
+                                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-badge">
+                                                ${unreadNotifications}
                                             </span>
-                                        </div>
-                                        
-                                        <button
-                                            onclick="showBuyCredits = true; render()"
-                                            class="p-2 bg-green-500 hover:bg-green-600 text-white rounded-full transition-colors"
-                                            title="Buy Credits"
-                                        >
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                                                <line x1="1" y1="10" x2="23" y2="10"/>
-                                            </svg>
-                                        </button>
-                                        
-                                        <button
-                                            onclick="showNotification = true; render()"
-                                            class="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors relative"
-                                            title="Notifications"
-                                        >
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                                            </svg>
-                                            ${unreadNotifications > 0 ? `
-                                                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-badge">
-                                                    ${unreadNotifications}
-                                                </span>
-                                            ` : ''}
-                                        </button>
-                                        
-                                        <button
-                                            onclick="currentView = 'profile'; render()"
-                                            class="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full transition-colors"
-                                            title="Profile"
-                                        >
-                                            ${currentUser.profileImage ? `
-                                                <img
-                                                    src="${currentUser.profileImage}"
-                                                    alt="Profile"
-                                                    class="w-5 h-5 rounded-full object-cover"
-                                                />
-                                            ` : `
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                                    <circle cx="12" cy="7" r="4"/>
-                                                </svg>
-                                            `}
-                                        </button>
-                                        
-                                        <button
-                                            onclick="handleLogout()"
-                                            class="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors"
-                                            title="Logout"
-                                        >
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                                                <polyline points="16,17 21,12 16,7"/>
-                                                <line x1="21" y1="12" x2="9" y2="12"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                    <!-- Mobile view -->
-                                    <div class="md:hidden flex items-center gap-3">
-                                        <button
-                                            onclick="showNotification = true; render()"
-                                            class="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors relative"
-                                        >
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                                            </svg>
-                                            ${unreadNotifications > 0 ? `
-                                                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-badge">
-                                                    ${unreadNotifications}
-                                                </span>
-                                            ` : ''}
-                                        </button>
-                                        
-                                        <button
-                                            onclick="showUserMenu = !showUserMenu; render()"
-                                            class="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full transition-colors relative"
-                                        >
-                                            ${currentUser.profileImage ? `
-                                                <img
-                                                    src="${currentUser.profileImage}"
-                                                    alt="Profile"
-                                                    class="w-5 h-5 rounded-full object-cover"
-                                                />
-                                            ` : `
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                                    <circle cx="12" cy="7" r="4"/>
-                                                </svg>
-                                            `}
-                                        </button>
-
-                                        <!-- Mobile User Menu -->
-                                        ${showUserMenu ? `
-                                            <div class="absolute top-16 right-4 bg-white rounded-lg shadow-xl border p-2 min-w-48 z-50">
-                                                <div class="flex items-center gap-2 p-3 border-b">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-pink-500">
-                                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                                                        <line x1="1" y1="10" x2="23" y2="10"/>
-                                                    </svg>
-                                                    <span class="font-semibold">
-                                                        Credits: ${currentUser.hasUnlimitedMessages && currentUser.unlimitedUntil && currentUser.unlimitedUntil > Date.now() 
-                                                            ? 'Unlimited' 
-                                                            : currentUser.credits
-                                                        }
-                                                    </span>
-                                                </div>
-                                                
-                                                <button
-                                                    onclick="showBuyCredits = true; showUserMenu = false; render()"
-                                                    class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                                                        <line x1="1" y1="10" x2="23" y2="10"/>
-                                                    </svg>
-                                                    Buy Credits
-                                                </button>
-                                                
-                                                <button
-                                                    onclick="currentView = 'profile'; showUserMenu = false; render()"
-                                                    class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <circle cx="12" cy="12" r="3"/>
-                                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                                                    </svg>
-                                                    Profile Settings
-                                                </button>
-                                                
-                                                <button
-                                                    onclick="showUserMenu = false; render()"
-                                                    class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <polyline points="1,4 1,10 7,10"/>
-                                                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-                                                    </svg>
-                                                    Transaction History
-                                                </button>
-                                                
-                                                <button
-                                                    onclick="showUserMenu = false; render()"
-                                                    class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <circle cx="12" cy="12" r="10"/>
-                                                        <path d="M9,9h0a3,3,0,0,1,6,0c0,2-3,3-3,3"/>
-                                                        <path d="M12 17h.01"/>
-                                                    </svg>
-                                                    Support
-                                                </button>
-                                                
-                                                <div class="border-t pt-2">
-                                                    <button
-                                                        onclick="handleLogout(); showUserMenu = false;"
-                                                        class="w-full flex items-center gap-2 p-3 hover:bg-red-50 text-red-600 rounded"
-                                                    >
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                                                            <polyline points="16,17 21,12 16,7"/>
-                                                            <line x1="21" y1="12" x2="9" y2="12"/>
-                                                        </svg>
-                                                        Logout
-                                                    </button>
-                                                </div>
-                                            </div>
                                         ` : ''}
-                                    </div>
+                                    </button>
+                                    
+                                    <button
+                                        onclick="showUserMenu = !showUserMenu; render()"
+                                        class="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full transition-colors relative"
+                                    >
+                                        ${currentUser.profileImage ? `
+                                            <img
+                                                src="${currentUser.profileImage}"
+                                                alt="Profile"
+                                                class="w-5 h-5 rounded-full object-cover"
+                                            />
+                                        ` : `
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                                <circle cx="12" cy="7" r="4"/>
+                                            </svg>
+                                        `}
+                                    </button>
+
+                                    <!-- User Menu -->
+                                    ${showUserMenu ? `
+                                        <div class="absolute top-16 right-4 bg-white rounded-lg shadow-xl border p-2 min-w-48 z-50">
+                                            <div class="flex items-center gap-2 p-3 border-b">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-pink-500">
+                                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                                    <line x1="1" y1="10" x2="23" y2="10"/>
+                                                </svg>
+                                                <span class="font-semibold">
+                                                    Credits: ${currentUser.hasUnlimitedMessages && currentUser.unlimitedUntil && currentUser.unlimitedUntil > Date.now() 
+                                                        ? 'Unlimited' 
+                                                        : currentUser.credits
+                                                    }
+                                                </span>
+                                            </div>
+                                            
+                                            <button
+                                                onclick="showBuyCredits = true; showUserMenu = false; render()"
+                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                                    <line x1="1" y1="10" x2="23" y2="10"/>
+                                                </svg>
+                                                Buy Credits
+                                            </button>
+                                            
+                                            <button
+                                                onclick="currentView = 'profile'; showUserMenu = false; render()"
+                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="12" cy="12" r="3"/>
+                                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                                </svg>
+                                                Profile Settings
+                                            </button>
+                                            
+                                            <button
+                                                onclick="showTransactionHistory = true; showUserMenu = false; render()"
+                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <polyline points="1,4 1,10 7,10"/>
+                                                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                                                </svg>
+                                                Transaction History
+                                            </button>
+                                            
+                                            <button
+                                                onclick="showSupport = true; showUserMenu = false; render()"
+                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="12" cy="12" r="10"/>
+                                                    <path d="M9,9h0a3,3,0,0,1,6,0c0,2-3,3-3,3"/>
+                                                    <path d="M12 17h.01"/>
+                                                </svg>
+                                                Support
+                                            </button>
+                                            
+                                            <div class="border-t pt-2">
+                                                <button
+                                                    onclick="handleLogout(); showUserMenu = false;"
+                                                    class="w-full flex items-center gap-2 p-3 hover:bg-red-50 text-red-600 rounded"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                                        <polyline points="16,17 21,12 16,7"/>
+                                                        <line x1="21" y1="12" x2="9" y2="12"/>
+                                                    </svg>
+                                                    Logout
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
                         </div>
@@ -1303,7 +1218,15 @@
                                     
                                     <div class="p-4">
                                         <h3 class="text-lg font-semibold text-gray-800 mb-1">${match.name}</h3>
-                                        <p class="text-sm text-gray-600 mb-3">${match.age} • ${match.country}</p>
+                                        <p class="text-sm text-gray-600 mb-3 flex items-center gap-1">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                                <circle cx="9" cy="7" r="4"/>
+                                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                            </svg>
+                                            ${match.age} • ${match.country}
+                                        </p>
                                         
                                         ${match.lastMessage ? `
                                             <div class="bg-gray-50 rounded-lg p-3 mb-3">
@@ -1348,7 +1271,7 @@
                     <!-- Overlay for mobile menu -->
                     ${showUserMenu ? `
                         <div 
-                            class="fixed inset-0 bg-black bg-opacity-25 z-40 md:hidden"
+                            class="fixed inset-0 bg-black bg-opacity-25 z-40"
                             onclick="showUserMenu = false; render()"
                         ></div>
                     ` : ''}
@@ -1419,7 +1342,6 @@
                             </div>
                         ` : `
                             <div class="space-y-4">
-                                <!-- Sample messages -->
                                 <div class="flex justify-end">
                                     <div class="gradient-button text-white px-4 py-2 rounded-2xl max-w-xs">
                                         <p class="text-sm">Hey! Nice to meet you</p>
@@ -1523,6 +1445,7 @@
                                                 />
                                             </label>
                                         ` : ''}
+                                        ${uploadPending ? '<div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white text-xs px-2 py-1 rounded">Under Review</div>' : ''}
                                     </div>
                                 </div>
 
@@ -1600,6 +1523,193 @@
             `;
         }
 
+        function renderNotificationsModal() {
+            if (!showNotifications) return '';
+
+            return `
+                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between p-6 border-b">
+                            <h2 class="text-xl font-bold text-gray-800">Notifications</h2>
+                            <div class="flex items-center gap-2">
+                                <button
+                                    onclick="markAllNotificationsRead()"
+                                    class="text-sm text-pink-500 hover:text-pink-600"
+                                >
+                                    Mark all read
+                                </button>
+                                <button
+                                    onclick="showNotifications = false; render()"
+                                    class="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                >
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            ${notifications.length === 0 ? `
+                                <div class="text-center py-8">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400 mx-auto mb-4">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                                    </svg>
+                                    <p class="text-gray-600">No notifications yet</p>
+                                </div>
+                            ` : `
+                                <div class="space-y-3">
+                                    ${notifications.slice().reverse().map(notification => `
+                                        <div class="p-4 border rounded-lg ${notification.isRead ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'} cursor-pointer hover:bg-gray-100 transition-colors"
+                                             onclick="handleNotificationAction('${notification.id}')">
+                                            <div class="flex items-start gap-3">
+                                                <div class="w-8 h-8 rounded-full flex items-center justify-center ${notification.type === 'message' ? 'bg-blue-100' : notification.type === 'like' ? 'bg-pink-100' : 'bg-green-100'}">
+                                                    ${notification.type === 'message' ? `
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-600">
+                                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                                        </svg>
+                                                    ` : notification.type === 'like' ? `
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-pink-600">
+                                                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                                        </svg>
+                                                    ` : `
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-600">
+                                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                                            <line x1="1" y1="10" x2="23" y2="10"/>
+                                                        </svg>
+                                                    `}
+                                                </div>
+                                                <div class="flex-1">
+                                                    <h4 class="font-semibold text-gray-800 text-sm">${notification.title}</h4>
+                                                    <p class="text-gray-600 text-sm mt-1">${notification.message}</p>
+                                                    <p class="text-gray-400 text-xs mt-2">${formatDate(notification.timestamp)}</p>
+                                                </div>
+                                                ${!notification.isRead ? '<div class="w-2 h-2 bg-blue-500 rounded-full"></div>' : ''}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTransactionHistoryModal() {
+            if (!showTransactionHistory) return '';
+
+            return `
+                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between p-6 border-b">
+                            <h2 class="text-xl font-bold text-gray-800">Transaction History</h2>
+                            <button
+                                onclick="showTransactionHistory = false; render()"
+                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="p-6">
+                            ${transactions.length === 0 ? `
+                                <div class="text-center py-8">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400 mx-auto mb-4">
+                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                        <line x1="1" y1="10" x2="23" y2="10"/>
+                                    </svg>
+                                    <p class="text-gray-600">No transactions yet</p>
+                                </div>
+                            ` : `
+                                <div class="space-y-3">
+                                    ${transactions.slice().reverse().map(transaction => `
+                                        <div class="p-4 border rounded-lg bg-gray-50">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <h4 class="font-semibold text-gray-800 text-sm">${transaction.packageName}</h4>
+                                                <span class="text-green-600 font-semibold">${transaction.amount}</span>
+                                            </div>
+                                            <div class="text-xs text-gray-600 space-y-1">
+                                                <p>Transaction ID: ${transaction.transactionId}</p>
+                                                <p>Date: ${formatDate(transaction.date)}</p>
+                                                <p>Status: <span class="text-green-600">${transaction.status}</span></p>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSupportModal() {
+            if (!showSupport) return '';
+
+            return `
+                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between p-6 border-b">
+                            <h2 class="text-xl font-bold text-gray-800">Support</h2>
+                            <button
+                                onclick="showSupport = false; render()"
+                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="p-6">
+                            <div class="space-y-4">
+                                <div class="text-center mb-6">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-pink-500 mx-auto mb-4">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M9,9h0a3,3,0,0,1,6,0c0,2-3,3-3,3"/>
+                                        <path d="M12 17h.01"/>
+                                    </svg>
+                                    <h3 class="text-lg font-semibold text-gray-800">How can we help?</h3>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                        <h4 class="font-semibold text-gray-800">Payment Issues</h4>
+                                        <p class="text-sm text-gray-600 mt-1">Having trouble with payments or credits?</p>
+                                    </div>
+                                    
+                                    <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                        <h4 class="font-semibold text-gray-800">Account Problems</h4>
+                                        <p class="text-sm text-gray-600 mt-1">Issues with your profile or account settings?</p>
+                                    </div>
+                                    
+                                    <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                        <h4 class="font-semibold text-gray-800">Technical Support</h4>
+                                        <p class="text-sm text-gray-600 mt-1">App not working properly?</p>
+                                    </div>
+                                    
+                                    <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                        <h4 class="font-semibold text-gray-800">Report User</h4>
+                                        <p class="text-sm text-gray-600 mt-1">Report inappropriate behavior</p>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                                    <h4 class="font-semibold text-blue-800 mb-2">Contact Us</h4>
+                                    <p class="text-sm text-blue-700 mb-2">Email: support@zurilove.com</p>
+                                    <p class="text-sm text-blue-700">Phone: +1 (555) 123-4567</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function renderBuyCreditsModal() {
             if (!showBuyCredits) return '';
 
@@ -1660,12 +1770,6 @@
                                         </div>
                                     </div>
 
-                                    ${error ? `
-                                        <div class="bg-red-50 border border-red-200 rounded-lg p-3">
-                                            <p class="text-red-600 text-sm">${error}</p>
-                                        </div>
-                                    ` : ''}
-
                                     <div class="space-y-4">
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -1673,13 +1777,13 @@
                                             </label>
                                             <input
                                                 type="text"
-                                                placeholder="Enter M-Pesa transaction ID"
+                                                placeholder="Enter: 12345678"
                                                 value="${transactionId}"
                                                 oninput="transactionId = this.value"
                                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
                                             />
                                             <p class="text-xs text-gray-500 mt-1">
-                                                Enter the transaction ID you received from M-Pesa
+                                                Use transaction ID: 12345678 for testing
                                             </p>
                                         </div>
 
@@ -1711,7 +1815,6 @@
                                         </h3>
                                     </div>
 
-                                    <!-- Currency Selector -->
                                     <div class="relative">
                                         <label class="block text-sm font-medium text-gray-700 mb-2">
                                             Select Currency
@@ -1741,7 +1844,6 @@
                                         ` : ''}
                                     </div>
 
-                                    <!-- Credit Packages -->
                                     <div class="space-y-3">
                                         ${CREDIT_PACKAGES.map(pkg => `
                                             <div
@@ -1771,14 +1873,12 @@
                                         `).join('')}
                                     </div>
 
-                                    <div class="flex gap-3">
-                                        <button
-                                            onclick="showBuyCredits = false; render()"
-                                            class="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium transition-all duration-200 hover:bg-gray-300"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
+                                    <button
+                                        onclick="showBuyCredits = false; render()"
+                                        class="w-full bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium transition-all duration-200 hover:bg-gray-300"
+                                    >
+                                        Cancel
+                                    </button>
                                 </div>
                             `}
                         </div>
@@ -1787,91 +1887,39 @@
             `;
         }
 
-        function renderNotificationModal() {
-            if (!showNotification || !currentNotification) return '';
+        function renderAlertModal() {
+            if (!showAlert) return '';
 
-            const getIcon = () => {
-                switch (currentNotification.type) {
-                    case 'message':
-                        return '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
-                    case 'like':
-                        return '<svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" class="text-pink-500"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
-                    case 'credit':
-                        return '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>';
-                    default:
-                        return '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
-                }
+            const alertColors = {
+                success: 'bg-green-50 border-green-200 text-green-800',
+                error: 'bg-red-50 border-red-200 text-red-800',
+                warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+                info: 'bg-blue-50 border-blue-200 text-blue-800'
             };
 
-            const getActionButton = () => {
-                switch (currentNotification.type) {
-                    case 'message':
-                        return `
-                            <button
-                                onclick="handleNotificationAction('view_message')"
-                                class="gradient-button text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-                            >
-                                View Message
-                            </button>
-                        `;
-                    case 'like':
-                        return `
-                            <button
-                                onclick="handleNotificationAction('view_like')"
-                                class="gradient-button text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-                            >
-                                View Profile
-                            </button>
-                        `;
-                    case 'credit':
-                        return `
-                            <button
-                                onclick="handleNotificationAction('buy_credits')"
-                                class="gradient-button text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-                            >
-                                Buy Credits
-                            </button>
-                        `;
-                    default:
-                        return '';
-                }
+            const alertIcons = {
+                success: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-600"><polyline points="20,6 9,17 4,12"/></svg>',
+                error: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-600"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+                warning: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-yellow-600"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+                info: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-600"><circle cx="12" cy="12" r="10"/><path d="M12,16v-4"/><path d="M12,8h.01"/></svg>'
             };
 
             return `
                 <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
-                        <div class="flex items-center justify-between p-6 border-b">
-                            <h2 class="text-xl font-bold text-gray-800">Notification</h2>
-                            <button
-                                onclick="showNotification = false; render()"
-                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                            >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                    <line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                            </button>
-                        </div>
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm">
                         <div class="p-6">
-                            <div class="text-center py-4">
-                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    ${getIcon()}
-                                </div>
-                                <h3 class="text-lg font-semibold text-gray-800 mb-2">
-                                    ${currentNotification.title}
-                                </h3>
-                                <p class="text-gray-600 mb-6">${currentNotification.message}</p>
-                                
-                                <div class="flex gap-3">
-                                    ${getActionButton()}
-                                    <button
-                                        onclick="showNotification = false; render()"
-                                        class="bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium transition-all duration-200 hover:bg-gray-300"
-                                    >
-                                        Close
-                                    </button>
+                            <div class="flex items-center gap-4 mb-4">
+                                ${alertIcons[alertType]}
+                                <div class="flex-1">
+                                    <p class="text-gray-800">${alertMessage}</p>
                                 </div>
                             </div>
+                            <button
+                                onclick="showAlert = false; render()"
+                                class="w-full gradient-button text-white py-2 px-4 rounded-lg font-medium transition-all duration-200"
+                            >
+                                OK
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1894,14 +1942,16 @@
             }
 
             content += renderBuyCreditsModal();
-            content += renderNotificationModal();
+            content += renderNotificationsModal();
+            content += renderTransactionHistoryModal();
+            content += renderSupportModal();
+            content += renderAlertModal();
 
             app.innerHTML = content;
         }
 
         // Initialize the app
         function init() {
-            // Check if user is already logged in
             const storedUser = storage.getCurrentUser();
             if (storedUser) {
                 currentUser = storedUser;
@@ -1909,7 +1959,6 @@
                 initializeApp();
             }
             
-            // Initialize fake matches if not already stored
             const storedMatches = storage.getMatches();
             if (storedMatches.length === 0) {
                 storage.setMatches(FAKE_MATCHES);
