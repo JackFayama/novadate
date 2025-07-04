@@ -17,25 +17,6 @@
             display: none; /* WebKit */
         }
         
-        /* Force mobile layout on all devices */
-        @media (min-width: 768px) {
-            .max-w-6xl {
-                max-width: 28rem !important; /* Force mobile width */
-            }
-            .md\:grid-cols-2 {
-                grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
-            }
-            .lg\:grid-cols-3 {
-                grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
-            }
-            .md\:flex {
-                display: none !important;
-            }
-            .md\:hidden {
-                display: flex !important;
-            }
-        }
-        
         .gradient-bg {
             background: linear-gradient(135deg, #fce7f3 0%, #f3e8ff 50%, #e0e7ff 100%);
         }
@@ -129,6 +110,20 @@
         @media (max-width: 768px) {
             input, select, textarea {
                 font-size: 16px; /* Prevents zoom on iOS */
+            }
+        }
+
+        /* Laptop layout adjustments */
+        @media (min-width: 1024px) {
+            .matches-grid-laptop {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            }
+        }
+
+        /* Tablet layout adjustments */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .matches-grid-tablet {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             }
         }
     </style>
@@ -355,77 +350,49 @@
                     </div>
                     
                     <div class="flex items-center gap-4">
-                        <!-- Desktop view -->
-                        <div class="hidden md:flex items-center gap-4">
-                            <div class="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-full">
-                                <i data-lucide="credit-card" class="w-4 h-4"></i>
-                                <span class="font-semibold" id="creditsDisplay">0</span>
-                            </div>
-                            
-                            <button id="buyCreditsBtn" class="flex items-center gap-2 bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-lg transition-colors">
-                                <i data-lucide="credit-card" class="w-4 h-4"></i>
-                                Buy Credits
-                            </button>
-                            
-                            <button id="notificationsBtn" class="relative p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors">
-                                <i data-lucide="bell" class="w-5 h-5"></i>
-                                <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">0</span>
-                            </button>
-                            
-                            <button id="profileBtn" class="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full transition-colors">
+                        <!-- Simplified header for all devices - only 2 icons -->
+                        <button id="notificationsBtn" class="relative p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                            <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">0</span>
+                        </button>
+                        
+                        <div class="relative">
+                            <button id="mobileMenuBtn" class="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full transition-colors">
                                 <i data-lucide="user" class="w-5 h-5"></i>
                             </button>
-                            
-                            <button id="logoutBtn" class="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors">
-                                <i data-lucide="log-out" class="w-5 h-5"></i>
-                            </button>
-                        </div>
 
-                        <!-- Mobile view -->
-                        <div class="md:hidden flex items-center gap-3">
-                            <button id="notificationsBtnMobile" class="relative p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors">
-                                <i data-lucide="bell" class="w-5 h-5"></i>
-                                <span id="notificationBadgeMobile" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">0</span>
-                            </button>
-                            
-                            <div class="relative">
-                                <button id="mobileMenuBtn" class="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full transition-colors">
-                                    <i data-lucide="user" class="w-5 h-5"></i>
+                            <!-- User Menu -->
+                            <div id="mobileMenu" class="dropdown absolute top-12 right-0 bg-white rounded-lg shadow-xl border p-2 min-w-48 z-50">
+                                <div class="flex items-center gap-2 p-3 border-b">
+                                    <i data-lucide="credit-card" class="w-4 h-4 text-pink-500"></i>
+                                    <span class="font-semibold">Credits: <span id="creditsMobile">0</span></span>
+                                </div>
+                                
+                                <button id="buyCreditsMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded">
+                                    <i data-lucide="credit-card" class="w-4 h-4"></i>
+                                    Buy Credits
                                 </button>
-
-                                <!-- Mobile User Menu -->
-                                <div id="mobileMenu" class="dropdown absolute top-12 right-0 bg-white rounded-lg shadow-xl border p-2 min-w-48 z-50">
-                                    <div class="flex items-center gap-2 p-3 border-b">
-                                        <i data-lucide="credit-card" class="w-4 h-4 text-pink-500"></i>
-                                        <span class="font-semibold">Credits: <span id="creditsMobile">0</span></span>
-                                    </div>
-                                    
-                                    <button id="buyCreditsMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded">
-                                        <i data-lucide="credit-card" class="w-4 h-4"></i>
-                                        Buy Credits
+                                
+                                <button id="profileMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded">
+                                    <i data-lucide="settings" class="w-4 h-4"></i>
+                                    Profile Settings
+                                </button>
+                                
+                                <button id="transactionMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded">
+                                    <i data-lucide="history" class="w-4 h-4"></i>
+                                    Transaction History
+                                </button>
+                                
+                                <button id="supportMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded">
+                                    <i data-lucide="help-circle" class="w-4 h-4"></i>
+                                    Support
+                                </button>
+                                
+                                <div class="border-t pt-2">
+                                    <button id="logoutMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-red-50 text-red-600 rounded">
+                                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                                        Logout
                                     </button>
-                                    
-                                    <button id="profileMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded">
-                                        <i data-lucide="settings" class="w-4 h-4"></i>
-                                        Profile Settings
-                                    </button>
-                                    
-                                    <button id="transactionMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded">
-                                        <i data-lucide="history" class="w-4 h-4"></i>
-                                        Transaction History
-                                    </button>
-                                    
-                                    <button id="supportMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded">
-                                        <i data-lucide="help-circle" class="w-4 h-4"></i>
-                                        Support
-                                    </button>
-                                    
-                                    <div class="border-t pt-2">
-                                        <button id="logoutMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-red-50 text-red-600 rounded">
-                                            <i data-lucide="log-out" class="w-4 h-4"></i>
-                                            Logout
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -441,7 +408,8 @@
                 <p class="text-gray-600" id="matchesCount">Loading matches...</p>
             </div>
 
-            <div id="matchesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Updated grid with responsive classes for 4 columns on laptop -->
+            <div id="matchesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 matches-grid-tablet matches-grid-laptop">
                 <!-- Matches will be populated here -->
             </div>
         </div>
@@ -860,6 +828,28 @@
             'NGN': '₦'
         };
 
+        // Country codes mapping
+        const countryCodes = {
+            'United States': '+1',
+            'Canada': '+1',
+            'United Kingdom': '+44',
+            'Australia': '+61',
+            'Germany': '+49',
+            'France': '+33',
+            'Spain': '+34',
+            'Italy': '+39',
+            'Brazil': '+55',
+            'Mexico': '+52',
+            'India': '+91',
+            'Japan': '+81',
+            'South Korea': '+82',
+            'China': '+86',
+            'Nigeria': '+234',
+            'Kenya': '+254',
+            'South Africa': '+27',
+            'Egypt': '+20'
+        };
+
         // Sample matches data
         const sampleMatches = [
             {
@@ -909,6 +899,54 @@
                 lastMessage: 'Nice profile!',
                 unreadCount: 0,
                 hasLiked: false,
+            },
+            {
+                id: '5',
+                name: 'Isabella Garcia',
+                age: 28,
+                country: 'Brazil',
+                sex: 'female',
+                profileImage: 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: true,
+                lastMessage: 'Hello! Love your photos',
+                unreadCount: 2,
+                hasLiked: true,
+            },
+            {
+                id: '6',
+                name: 'Michael Johnson',
+                age: 32,
+                country: 'Australia',
+                sex: 'male',
+                profileImage: 'https://images.pexels.com/photos/1043473/pexels-photo-1043473.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: false,
+                lastMessage: 'Great to connect!',
+                unreadCount: 0,
+                hasLiked: false,
+            },
+            {
+                id: '7',
+                name: 'Aria Patel',
+                age: 25,
+                country: 'India',
+                sex: 'female',
+                profileImage: 'https://images.pexels.com/photos/1542085/pexels-photo-1542085.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: true,
+                lastMessage: 'Hi! Nice to meet you',
+                unreadCount: 1,
+                hasLiked: false,
+            },
+            {
+                id: '8',
+                name: 'David Kim',
+                age: 30,
+                country: 'South Korea',
+                sex: 'male',
+                profileImage: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: true,
+                lastMessage: 'Looking forward to chatting!',
+                unreadCount: 0,
+                hasLiked: true,
             }
         ];
 
@@ -952,11 +990,17 @@
             document.getElementById('profileImage').addEventListener('change', handleProfileImageUpload);
             document.getElementById('profileImageEdit').addEventListener('change', handleProfileImageEdit);
             
+            // Country selection auto-fill country code
+            document.getElementById('country').addEventListener('change', function(e) {
+                const selectedCountry = e.target.value;
+                const countryCodeInput = document.getElementById('countryCode');
+                if (countryCodes[selectedCountry]) {
+                    countryCodeInput.value = countryCodes[selectedCountry];
+                }
+            });
+            
             // Header buttons
-            document.getElementById('buyCreditsBtn')?.addEventListener('click', () => showModal('buyCreditsModal'));
             document.getElementById('notificationsBtn')?.addEventListener('click', () => showModal('notificationsModal'));
-            document.getElementById('profileBtn')?.addEventListener('click', () => showModal('profileModal'));
-            document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
             
             // Mobile menu
             document.getElementById('mobileMenuBtn')?.addEventListener('click', toggleMobileMenu);
@@ -980,7 +1024,6 @@
                 toggleMobileMenu();
                 handleLogout();
             });
-            document.getElementById('notificationsBtnMobile')?.addEventListener('click', () => showModal('notificationsModal'));
             
             // Chat events
             document.getElementById('backToMatches')?.addEventListener('click', showMainScreen);
@@ -1202,7 +1245,11 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     document.getElementById('profileImageDisplay').src = e.target.result;
-                    showSuccessMessage('Profile image updated! Changes will be reviewed.');
+                    if (currentUser) {
+                        currentUser.profileImage = e.target.result;
+                        updateUserInStorage();
+                    }
+                    showSuccessMessage('Profile image updated successfully!');
                 };
                 reader.readAsDataURL(file);
             }
@@ -1230,7 +1277,7 @@
             
             updateUserDisplay();
             loadMatches();
-            // Don't generate notifications for new users
+            startNotificationSystem();
         }
 
         function showChatScreen(match) {
@@ -1249,7 +1296,6 @@
                 currentUser.unlimitedUntil && 
                 currentUser.unlimitedUntil > Date.now() ? '∞' : currentUser.credits;
             
-            document.getElementById('creditsDisplay').textContent = creditsDisplay;
             document.getElementById('creditsMobile').textContent = creditsDisplay === '∞' ? 'Unlimited' : creditsDisplay;
             
             // Update profile form
@@ -1259,6 +1305,10 @@
                 document.getElementById('profileHeight').value = currentUser.height || '';
                 document.getElementById('profileCountry').value = currentUser.country || '';
                 document.getElementById('profileEmail').value = currentUser.email || '';
+                
+                if (currentUser.profileImage) {
+                    document.getElementById('profileImageDisplay').src = currentUser.profileImage;
+                }
             }
         }
 
@@ -1329,7 +1379,7 @@
                 matches[matchIndex].hasLiked = !matches[matchIndex].hasLiked;
                 
                 // Deduct credit if not unlimited
-                if (!currentUser.hasUnlimitedMessages) {
+                if (!currentUser.hasUnlimitedMessages || !currentUser.unlimitedUntil || currentUser.unlimitedUntil <= Date.now()) {
                     currentUser.credits = Math.max(0, currentUser.credits - 1);
                     updateUserInStorage();
                 }
@@ -1405,7 +1455,7 @@
             messageInput.style.height = 'auto';
             
             // Deduct credit if not unlimited
-            if (!currentUser.hasUnlimitedMessages) {
+            if (!currentUser.hasUnlimitedMessages || !currentUser.unlimitedUntil || currentUser.unlimitedUntil <= Date.now()) {
                 currentUser.credits = Math.max(0, currentUser.credits - 1);
                 updateUserInStorage();
                 updateUserDisplay();
@@ -1669,17 +1719,110 @@
         function updateNotificationBadge() {
             const unreadCount = notifications.filter(n => !n.isRead).length;
             const badge = document.getElementById('notificationBadge');
-            const badgeMobile = document.getElementById('notificationBadgeMobile');
             
             if (unreadCount > 0) {
                 badge.textContent = unreadCount;
                 badge.classList.remove('hidden');
-                badgeMobile.textContent = unreadCount;
-                badgeMobile.classList.remove('hidden');
             } else {
                 badge.classList.add('hidden');
-                badgeMobile.classList.add('hidden');
             }
+        }
+
+        function startNotificationSystem() {
+            if (!currentUser) return;
+
+            // Start notifications after 20 minutes for existing users
+            const userCreatedTime = parseInt(currentUser.id);
+            const timeSinceCreation = Date.now() - userCreatedTime;
+            const twentyMinutes = 20 * 60 * 1000;
+
+            if (timeSinceCreation < twentyMinutes) {
+                setTimeout(() => {
+                    generateDailyNotifications();
+                }, twentyMinutes - timeSinceCreation);
+            } else {
+                generateDailyNotifications();
+            }
+        }
+
+        function generateDailyNotifications() {
+            if (!currentUser) return;
+
+            const today = new Date().toDateString();
+            const todayNotifications = notifications.filter(n => 
+                new Date(n.timestamp).toDateString() === today
+            );
+
+            if (todayNotifications.length >= 28) return; // Max 28 per day
+
+            const notificationTypes = [
+                {
+                    type: 'message',
+                    title: 'New Message',
+                    messages: [
+                        'Someone sent you a message!',
+                        'You have a new message waiting',
+                        'Check out your latest message',
+                        'Someone is trying to reach you'
+                    ]
+                },
+                {
+                    type: 'like',
+                    title: 'New Like',
+                    messages: [
+                        'Someone liked your profile!',
+                        'You got a new like',
+                        'Your profile caught someone\'s attention',
+                        'Someone is interested in you'
+                    ]
+                },
+                {
+                    type: 'match',
+                    title: 'New Match',
+                    messages: [
+                        'You have a new match!',
+                        'Someone matched with you',
+                        'It\'s a match! Start chatting',
+                        'You and someone liked each other'
+                    ]
+                },
+                {
+                    type: 'view',
+                    title: 'Profile View',
+                    messages: [
+                        'Someone viewed your profile',
+                        'Your profile got a new view',
+                        'Someone checked out your profile',
+                        'You have a new profile visitor'
+                    ]
+                }
+            ];
+
+            // Generate random notification
+            const randomType = notificationTypes[Math.floor(Math.random() * notificationTypes.length)];
+            const randomMessage = randomType.messages[Math.floor(Math.random() * randomType.messages.length)];
+
+            const notification = {
+                id: Date.now().toString(),
+                type: randomType.type,
+                title: randomType.title,
+                message: randomMessage,
+                timestamp: Date.now(),
+                isRead: false
+            };
+
+            notifications.push(notification);
+            localStorage.setItem('zuriLoveNotifications', JSON.stringify(notifications));
+            updateNotificationBadge();
+
+            // Schedule next notification (random interval between 30 minutes to 3 hours)
+            const minInterval = 30 * 60 * 1000; // 30 minutes
+            const maxInterval = 3 * 60 * 60 * 1000; // 3 hours
+            const nextInterval = Math.random() * (maxInterval - minInterval) + minInterval;
+
+            setTimeout(() => {
+                generateDailyNotifications();
+            }, nextInterval);
         }
 
         function updateUserInStorage() {
