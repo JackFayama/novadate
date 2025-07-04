@@ -3,231 +3,837 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zuri Love - Complete Dating Web App</title>
+    <title>Zuri Love - Dating App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
         .gradient-bg {
             background: linear-gradient(135deg, #fce7f3 0%, #f3e8ff 50%, #e0e7ff 100%);
         }
+        
         .gradient-text {
             background: linear-gradient(135deg, #ec4899, #8b5cf6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        .gradient-button {
-            background: linear-gradient(135deg, #ec4899, #8b5cf6);
-        }
-        .gradient-button:hover {
-            background: linear-gradient(135deg, #db2777, #7c3aed);
-        }
-        .modal-overlay {
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-        .notification-badge {
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        .online-dot {
-            animation: pulse 2s infinite;
-        }
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-        .card-hover:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
+        
         .line-clamp-2 {
             overflow: hidden;
             display: -webkit-box;
             -webkit-box-orient: vertical;
             -webkit-line-clamp: 2;
         }
-        .dropdown-menu {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
-        .dropdown-menu.open {
-            max-height: 400px;
+
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .dropdown.show {
+            display: block;
+        }
+
+        /* Ensure all inputs are properly styled and functional */
+        input[type="text"], 
+        input[type="email"], 
+        input[type="password"], 
+        input[type="number"], 
+        input[type="tel"], 
+        select, 
+        textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background-color: white;
+            color: #374151;
+        }
+
+        input:focus, 
+        select:focus, 
+        textarea:focus {
+            outline: none;
+            border-color: #ec4899;
+            box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: #9ca3af;
+        }
+
+        /* Fix for mobile inputs */
+        @media (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
         }
     </style>
 </head>
 <body class="bg-gray-50">
-    <div id="app"></div>
+    <!-- Auth Screen -->
+    <div id="authScreen" class="min-h-screen gradient-bg flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="p-8">
+                <div class="text-center mb-8">
+                    <div class="flex items-center justify-center mb-4">
+                        <i data-lucide="heart" class="text-pink-500 mr-2 w-8 h-8"></i>
+                        <h1 class="text-3xl font-bold gradient-text">Zuri Love</h1>
+                    </div>
+                    <p class="text-gray-600" id="authSubtitle">Welcome back!</p>
+                </div>
+
+                <div id="errorMessage" class="hidden bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                    <p class="text-red-600 text-sm" id="errorText"></p>
+                </div>
+
+                <form id="authForm" class="space-y-4">
+                    <div>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email"
+                            placeholder="Email" 
+                            required 
+                            autocomplete="email"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        >
+                    </div>
+
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password"
+                            placeholder="Password" 
+                            required 
+                            autocomplete="current-password"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent pr-12"
+                        >
+                        <button type="button" id="togglePassword" class="absolute right-3 top-3 text-gray-500 hover:text-gray-700">
+                            <i data-lucide="eye" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Registration fields (hidden by default) -->
+                    <div id="registrationFields" class="hidden space-y-4">
+                        <div>
+                            <input 
+                                type="text" 
+                                id="fullName" 
+                                name="fullName"
+                                placeholder="Full Name" 
+                                autocomplete="name"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            >
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <input 
+                                type="number" 
+                                id="age" 
+                                name="age"
+                                placeholder="Age" 
+                                min="18" 
+                                max="100"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            >
+                            <input 
+                                type="text" 
+                                id="height" 
+                                name="height"
+                                placeholder="Height" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            >
+                        </div>
+
+                        <div>
+                            <select 
+                                id="country" 
+                                name="country"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            >
+                                <option value="">Select Country</option>
+                                <option value="United States">United States</option>
+                                <option value="Canada">Canada</option>
+                                <option value="United Kingdom">United Kingdom</option>
+                                <option value="Australia">Australia</option>
+                                <option value="Germany">Germany</option>
+                                <option value="France">France</option>
+                                <option value="Spain">Spain</option>
+                                <option value="Italy">Italy</option>
+                                <option value="Brazil">Brazil</option>
+                                <option value="Mexico">Mexico</option>
+                                <option value="India">India</option>
+                                <option value="Japan">Japan</option>
+                                <option value="South Korea">South Korea</option>
+                                <option value="China">China</option>
+                                <option value="Nigeria">Nigeria</option>
+                                <option value="Kenya">Kenya</option>
+                                <option value="South Africa">South Africa</option>
+                                <option value="Egypt">Egypt</option>
+                            </select>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <div class="w-20">
+                                <input 
+                                    type="text" 
+                                    id="countryCode" 
+                                    name="countryCode"
+                                    placeholder="+1" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                >
+                            </div>
+                            <div class="flex-1">
+                                <input 
+                                    type="tel" 
+                                    id="phoneNumber" 
+                                    name="phoneNumber"
+                                    placeholder="Phone Number" 
+                                    autocomplete="tel"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                >
+                            </div>
+                        </div>
+
+                        <div>
+                            <select 
+                                id="sex" 
+                                name="sex"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            >
+                                <option value="">Select Your Sex</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <select 
+                                id="lookingFor" 
+                                name="lookingFor"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            >
+                                <option value="">Looking For</option>
+                                <option value="male">Men</option>
+                                <option value="female">Women</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <select 
+                                id="relationshipStatus" 
+                                name="relationshipStatus"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            >
+                                <option value="">Relationship Status</option>
+                                <option value="single">Single</option>
+                                <option value="divorced">Divorced</option>
+                                <option value="widowed">Widowed</option>
+                                <option value="separated">Separated</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <select 
+                                id="relationshipType" 
+                                name="relationshipType"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            >
+                                <option value="">Relationship Type</option>
+                                <option value="friendship">Friendship</option>
+                                <option value="short-term">Short-term Relationship</option>
+                                <option value="long-term">Long-term Relationship</option>
+                                <option value="marriage">Marriage</option>
+                            </select>
+                        </div>
+
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-pink-500 transition-colors">
+                            <input type="file" accept="image/*" id="profileImage" class="hidden">
+                            <label for="profileImage" class="cursor-pointer">
+                                <div id="imagePreview" class="hidden">
+                                    <img id="previewImg" class="w-20 h-20 rounded-full mx-auto mb-2 object-cover">
+                                </div>
+                                <div id="uploadPlaceholder">
+                                    <i data-lucide="upload" class="w-8 h-8 text-gray-400 mx-auto mb-2"></i>
+                                    <p class="text-sm text-gray-600">Upload profile photo</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-pink-600 hover:to-purple-700 transition-all">
+                        <span id="submitText">Sign In</span>
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <p class="text-gray-600">
+                        <span id="switchText">Don't have an account?</span>
+                        <button id="switchMode" class="text-pink-500 hover:text-pink-600 ml-1 font-medium">
+                            <span id="switchButton">Sign Up</span>
+                        </button>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Screen -->
+    <div id="mainScreen" class="hidden min-h-screen bg-gray-50">
+        <!-- Header -->
+        <div class="bg-white shadow-sm sticky top-0 z-40">
+            <div class="max-w-6xl mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i data-lucide="heart" class="text-pink-500 mr-2 w-7 h-7"></i>
+                        <h1 class="text-2xl font-bold gradient-text">Zuri Love</h1>
+                    </div>
+                    
+                    <div class="flex items-center gap-4">
+                        <!-- Desktop view -->
+                        <div class="hidden md:flex items-center gap-4">
+                            <div class="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-full">
+                                <i data-lucide="credit-card" class="w-4 h-4"></i>
+                                <span class="font-semibold" id="creditsDisplay">5</span>
+                            </div>
+                            
+                            <button id="buyCreditsBtn" class="flex items-center gap-2 bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-lg transition-colors">
+                                <i data-lucide="credit-card" class="w-4 h-4"></i>
+                                Buy Credits
+                            </button>
+                            
+                            <button id="notificationsBtn" class="relative p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors">
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">0</span>
+                            </button>
+                            
+                            <button id="profileBtn" class="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full transition-colors">
+                                <i data-lucide="user" class="w-5 h-5"></i>
+                            </button>
+                            
+                            <button id="logoutBtn" class="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors">
+                                <i data-lucide="log-out" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+
+                        <!-- Mobile view -->
+                        <div class="md:hidden flex items-center gap-3">
+                            <button id="notificationsBtnMobile" class="relative p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors">
+                                <i data-lucide="bell" class="w-5 h-5"></i>
+                                <span id="notificationBadgeMobile" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">0</span>
+                            </button>
+                            
+                            <div class="relative">
+                                <button id="mobileMenuBtn" class="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full transition-colors">
+                                    <i data-lucide="user" class="w-5 h-5"></i>
+                                </button>
+
+                                <!-- Mobile User Menu -->
+                                <div id="mobileMenu" class="dropdown absolute top-12 right-0 bg-white rounded-lg shadow-xl border p-2 min-w-48 z-50">
+                                    <div class="flex items-center gap-2 p-3 border-b">
+                                        <i data-lucide="credit-card" class="w-4 h-4 text-pink-500"></i>
+                                        <span class="font-semibold">Credits: <span id="creditsMobile">5</span></span>
+                                    </div>
+                                    
+                                    <button id="buyCreditsMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded">
+                                        <i data-lucide="credit-card" class="w-4 h-4"></i>
+                                        Buy Credits
+                                    </button>
+                                    
+                                    <button id="profileMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded">
+                                        <i data-lucide="settings" class="w-4 h-4"></i>
+                                        Profile Settings
+                                    </button>
+                                    
+                                    <button id="transactionMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded">
+                                        <i data-lucide="history" class="w-4 h-4"></i>
+                                        Transaction History
+                                    </button>
+                                    
+                                    <button id="supportMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded">
+                                        <i data-lucide="help-circle" class="w-4 h-4"></i>
+                                        Support
+                                    </button>
+                                    
+                                    <div class="border-t pt-2">
+                                        <button id="logoutMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-red-50 text-red-600 rounded">
+                                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                                            Logout
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Matches Grid -->
+        <div class="max-w-6xl mx-auto px-4 py-8">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Your Matches</h2>
+                <p class="text-gray-600" id="matchesCount">Loading matches...</p>
+            </div>
+
+            <div id="matchesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Matches will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chatScreen" class="hidden min-h-screen bg-gray-50 flex flex-col">
+        <!-- Chat Header -->
+        <div class="bg-white shadow-sm border-b">
+            <div class="max-w-md mx-auto flex items-center p-4">
+                <button id="backToMatches" class="p-2 hover:bg-gray-100 rounded-full transition-colors mr-3">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </button>
+                <div class="flex items-center flex-1">
+                    <div class="relative">
+                        <img id="chatUserImage" class="w-10 h-10 rounded-full object-cover" src="">
+                        <div id="chatUserOnline" class="hidden absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                    </div>
+                    <div class="ml-3">
+                        <h2 id="chatUserName" class="font-semibold text-gray-800"></h2>
+                        <p id="chatUserStatus" class="text-sm text-gray-600">Offline</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="flex-1 max-w-md mx-auto w-full p-4">
+            <div id="chatMessages" class="space-y-4">
+                <!-- Messages will be populated here -->
+            </div>
+            
+            <div id="chatLocked" class="hidden flex flex-col items-center justify-center h-full text-center">
+                <i data-lucide="lock" class="text-gray-400 mb-4 w-12 h-12"></i>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Messages are locked</h3>
+                <p class="text-gray-600 mb-6">You need credits to send and view messages</p>
+                <button id="unlockChatBtn" class="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-pink-600 hover:to-purple-700 transition-all">
+                    <i data-lucide="lock" class="w-4 h-4"></i>
+                    Buy Credits
+                </button>
+            </div>
+        </div>
+
+        <!-- Message Input -->
+        <div id="chatInput" class="hidden bg-white border-t p-4 max-w-md mx-auto w-full">
+            <div class="flex items-center gap-3">
+                <textarea 
+                    id="messageInput" 
+                    placeholder="Type a message..." 
+                    rows="1"
+                    class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
+                ></textarea>
+                <button id="sendMessageBtn" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white p-3 rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all">
+                    <i data-lucide="send" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buy Credits Modal -->
+    <div id="buyCreditsModal" class="modal">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
+            <div class="flex items-center justify-between p-6 border-b">
+                <h2 class="text-xl font-bold text-gray-800">Buy Credits</h2>
+                <button id="closeBuyCredits" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div id="buyCreditsContent">
+                    <div class="text-center mb-6">
+                        <i data-lucide="credit-card" class="text-pink-500 mx-auto mb-4 w-16 h-16"></i>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Choose Your Package</h3>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Currency</label>
+                        <select id="currencySelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                            <option value="USD">$ US Dollar</option>
+                            <option value="EUR">€ Euro</option>
+                            <option value="GBP">£ British Pound</option>
+                            <option value="KES">KSh Kenyan Shilling</option>
+                            <option value="NGN">₦ Nigerian Naira</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-3 mb-6">
+                        <div class="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-lg border hover:border-pink-300 transition-colors cursor-pointer" data-package="1">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-semibold text-gray-800">10 Credits</p>
+                                    <p class="text-sm text-gray-600">10 credits for messaging</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-lg text-pink-600" data-price="1">$1.00</p>
+                                    <p class="text-xs text-gray-500">$1.00 USD</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-lg border hover:border-pink-300 transition-colors cursor-pointer" data-package="2">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-semibold text-gray-800">Unlimited Messages (1 Month)</p>
+                                    <p class="text-sm text-gray-600">Unlimited messages for 30 days</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-lg text-pink-600" data-price="5">$5.00</p>
+                                    <p class="text-xs text-gray-500">$5.00 USD</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-lg border hover:border-pink-300 transition-colors cursor-pointer" data-package="3">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-semibold text-gray-800">Unlimited Messages (1 Month Premium)</p>
+                                    <p class="text-sm text-gray-600">Unlimited messages for 30 days</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-lg text-pink-600" data-price="10">$10.00</p>
+                                    <p class="text-xs text-gray-500">$10.00 USD</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="cancelBuyCredits" class="w-full bg-gray-200 text-gray-800 hover:bg-gray-300 py-3 rounded-lg font-medium transition-colors">
+                        Cancel
+                    </button>
+                </div>
+
+                <!-- Payment Form -->
+                <div id="paymentForm" class="hidden">
+                    <div class="text-center mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Complete Payment</h3>
+                        <div class="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-lg">
+                            <p class="font-semibold text-gray-800" id="selectedPackageName"></p>
+                            <p class="text-2xl font-bold text-pink-600" id="selectedPackagePrice"></p>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <h4 class="font-semibold text-blue-800 mb-2">Payment Instructions</h4>
+                        <p class="text-blue-700 text-sm mb-2">
+                            Send <strong id="paymentAmount"></strong> to M-Pesa Till Number:
+                        </p>
+                        <div class="bg-blue-100 p-3 rounded text-center">
+                            <p class="text-xl font-bold text-blue-800">12345678</p>
+                        </div>
+                    </div>
+
+                    <div id="paymentError" class="hidden bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                        <p class="text-red-600 text-sm" id="paymentErrorText"></p>
+                    </div>
+
+                    <div class="space-y-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Transaction ID</label>
+                            <input 
+                                type="text" 
+                                id="transactionId" 
+                                name="transactionId"
+                                placeholder="Enter M-Pesa transaction ID" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            >
+                            <p class="text-xs text-gray-500 mt-1">Enter the transaction ID you received from M-Pesa</p>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button id="confirmPayment" class="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-pink-600 hover:to-purple-700 transition-all">
+                                Confirm Payment
+                            </button>
+                            <button id="backToPackages" class="bg-gray-200 text-gray-800 hover:bg-gray-300 px-6 py-3 rounded-lg font-medium transition-colors">
+                                Back
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Success Message -->
+                <div id="paymentSuccess" class="hidden text-center py-8">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="check" class="text-green-600 w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Payment Successful!</h3>
+                    <p class="text-gray-600" id="successMessage"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Settings Modal -->
+    <div id="profileModal" class="modal">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
+            <div class="flex items-center justify-between p-6 border-b">
+                <h2 class="text-xl font-bold text-gray-800">Profile Settings</h2>
+                <button id="closeProfile" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="text-center mb-6">
+                    <div class="relative inline-block">
+                        <img id="profileImageDisplay" class="w-24 h-24 rounded-full object-cover border-4 border-gray-200" src="https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop" alt="Profile">
+                        <label for="profileImageEdit" class="absolute bottom-0 right-0 p-2 bg-pink-500 rounded-full text-white cursor-pointer hover:bg-pink-600 transition-colors">
+                            <i data-lucide="upload" class="w-4 h-4"></i>
+                        </label>
+                        <input type="file" id="profileImageEdit" accept="image/*" class="hidden">
+                    </div>
+                </div>
+
+                <form id="profileForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                        <input 
+                            type="text" 
+                            id="profileName" 
+                            name="profileName"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        >
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Age</label>
+                            <input 
+                                type="number" 
+                                id="profileAge" 
+                                name="profileAge"
+                                min="18" 
+                                max="100"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Height</label>
+                            <input 
+                                type="text" 
+                                id="profileHeight" 
+                                name="profileHeight"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                        <input 
+                            type="text" 
+                            id="profileCountry" 
+                            name="profileCountry"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input 
+                            type="email" 
+                            id="profileEmail" 
+                            name="profileEmail"
+                            readonly 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                        >
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="submit" class="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-pink-600 hover:to-purple-700 transition-all">
+                            <i data-lucide="check" class="w-4 h-4 inline mr-2"></i>
+                            Save Changes
+                        </button>
+                        <button type="button" id="cancelProfile" class="bg-gray-200 text-gray-800 hover:bg-gray-300 px-6 py-3 rounded-lg font-medium transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction History Modal -->
+    <div id="transactionModal" class="modal">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
+            <div class="flex items-center justify-between p-6 border-b">
+                <h2 class="text-xl font-bold text-gray-800">Transaction History</h2>
+                <button id="closeTransaction" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div id="transactionList" class="space-y-4">
+                    <!-- Transactions will be populated here -->
+                </div>
+                <div id="noTransactions" class="text-center py-8 text-gray-500">
+                    <i data-lucide="credit-card" class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
+                    <p>No transactions yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Modal -->
+    <div id="supportModal" class="modal">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
+            <div class="flex items-center justify-between p-6 border-b">
+                <h2 class="text-xl font-bold text-gray-800">Support</h2>
+                <button id="closeSupport" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-3">Frequently Asked Questions</h3>
+                        <div class="space-y-3">
+                            <div class="border rounded-lg p-3">
+                                <h4 class="font-medium text-gray-800">How do I buy credits?</h4>
+                                <p class="text-sm text-gray-600 mt-1">Click on "Buy Credits" and follow the payment instructions using M-Pesa.</p>
+                            </div>
+                            <div class="border rounded-lg p-3">
+                                <h4 class="font-medium text-gray-800">How do I send messages?</h4>
+                                <p class="text-sm text-gray-600 mt-1">You need credits to send messages. Each message costs 1 credit.</p>
+                            </div>
+                            <div class="border rounded-lg p-3">
+                                <h4 class="font-medium text-gray-800">What is unlimited messaging?</h4>
+                                <p class="text-sm text-gray-600 mt-1">With unlimited messaging, you can send as many messages as you want for 30 days.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-3">Contact Us</h3>
+                        <div class="space-y-2">
+                            <p class="text-sm text-gray-600">
+                                <i data-lucide="mail" class="w-4 h-4 inline mr-2"></i>
+                                support@zurilove.com
+                            </p>
+                            <p class="text-sm text-gray-600">
+                                <i data-lucide="phone" class="w-4 h-4 inline mr-2"></i>
+                                +1 (555) 123-4567
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Modal -->
+    <div id="notificationsModal" class="modal">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto m-4">
+            <div class="flex items-center justify-between p-6 border-b">
+                <h2 class="text-xl font-bold text-gray-800">Notifications</h2>
+                <button id="closeNotifications" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div id="notificationsList" class="space-y-4">
+                    <!-- Notifications will be populated here -->
+                </div>
+                <div id="noNotifications" class="text-center py-8 text-gray-500">
+                    <i data-lucide="bell" class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
+                    <p>No notifications yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm m-4">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="check" class="text-green-600 w-8 h-8"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2" id="successTitle">Success!</h3>
+                <p class="text-gray-600 mb-6" id="successText"></p>
+                <button id="closeSuccess" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-pink-600 hover:to-purple-700 transition-all">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
         // Initialize EmailJS
         emailjs.init('LMdaXNTSTm33O5BqT');
 
-        // Global state
+        // Global variables
         let currentUser = null;
-        let currentView = 'auth';
-        let selectedMatch = null;
-        let showBuyCredits = false;
-        let showNotifications = false;
-        let showUserMenu = false;
-        let showTransactionHistory = false;
-        let showSupport = false;
-        let showProfileSettings = false;
-        let currentMessage = '';
+        let isLogin = true;
         let matches = [];
         let notifications = [];
         let transactions = [];
-        let isLogin = true;
-        let showPassword = false;
-        let showCountryDropdown = false;
-        let showCurrencyDropdown = false;
-        let selectedPackage = null;
-        let selectedCurrency = { code: 'USD', name: 'US Dollar', symbol: '$', rate: 1 };
-        let showPayment = false;
-        let showSuccess = false;
-        let transactionId = '';
-        let error = '';
-        let profileImage = '';
-        let isEditing = false;
-        let showAlert = false;
-        let alertMessage = '';
-        let alertType = 'info';
-        let chatMessages = [];
+        let currentMatch = null;
 
-        // Form data
-        let formData = {
-            email: '',
-            password: '',
-            name: '',
-            age: '',
-            height: '',
-            country: '',
-            countryCode: '',
-            phoneNumber: '',
-            relationshipStatus: '',
-            lookingFor: '',
-            relationshipType: '',
-            sex: '',
+        // Currency rates (relative to USD)
+        const currencyRates = {
+            'USD': 1,
+            'EUR': 0.85,
+            'GBP': 0.73,
+            'KES': 129.50,
+            'NGN': 461.50
         };
 
-        let editFormData = {
-            name: '',
-            age: '',
-            height: '',
-            country: '',
+        const currencySymbols = {
+            'USD': '$',
+            'EUR': '€',
+            'GBP': '£',
+            'KES': 'KSh',
+            'NGN': '₦'
         };
 
-        // Constants
-        const CURRENCIES = [
-            { code: 'USD', name: 'US Dollar', symbol: '$', rate: 1 },
-            { code: 'EUR', name: 'Euro', symbol: '€', rate: 0.85 },
-            { code: 'GBP', name: 'British Pound', symbol: '£', rate: 0.73 },
-            { code: 'KES', name: 'Kenyan Shilling', symbol: 'KSh', rate: 129.50 },
-            { code: 'NGN', name: 'Nigerian Naira', symbol: '₦', rate: 461.50 },
-            { code: 'ZAR', name: 'South African Rand', symbol: 'R', rate: 18.75 },
-            { code: 'GHS', name: 'Ghanaian Cedi', symbol: '₵', rate: 12.15 },
-            { code: 'UGX', name: 'Ugandan Shilling', symbol: 'USh', rate: 3720 },
-            { code: 'TZS', name: 'Tanzanian Shilling', symbol: 'TSh', rate: 2340 },
-            { code: 'RWF', name: 'Rwandan Franc', symbol: 'RF', rate: 1025 },
-            { code: 'ETB', name: 'Ethiopian Birr', symbol: 'Br', rate: 55.25 },
-            { code: 'EGP', name: 'Egyptian Pound', symbol: 'E£', rate: 30.85 },
-            { code: 'MAD', name: 'Moroccan Dirham', symbol: 'DH', rate: 10.15 },
-            { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 83.25 },
-            { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', rate: 7.25 },
-            { code: 'JPY', name: 'Japanese Yen', symbol: '¥', rate: 149.50 },
-            { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', rate: 1.52 },
-            { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', rate: 1.36 },
-        ];
-
-        const COUNTRIES = [
-            { name: 'Afghanistan', code: 'AF', dialCode: '+93' },
-            { name: 'Albania', code: 'AL', dialCode: '+355' },
-            { name: 'Algeria', code: 'DZ', dialCode: '+213' },
-            { name: 'Argentina', code: 'AR', dialCode: '+54' },
-            { name: 'Australia', code: 'AU', dialCode: '+61' },
-            { name: 'Austria', code: 'AT', dialCode: '+43' },
-            { name: 'Bangladesh', code: 'BD', dialCode: '+880' },
-            { name: 'Belgium', code: 'BE', dialCode: '+32' },
-            { name: 'Brazil', code: 'BR', dialCode: '+55' },
-            { name: 'Canada', code: 'CA', dialCode: '+1' },
-            { name: 'China', code: 'CN', dialCode: '+86' },
-            { name: 'Denmark', code: 'DK', dialCode: '+45' },
-            { name: 'Egypt', code: 'EG', dialCode: '+20' },
-            { name: 'Ethiopia', code: 'ET', dialCode: '+251' },
-            { name: 'France', code: 'FR', dialCode: '+33' },
-            { name: 'Germany', code: 'DE', dialCode: '+49' },
-            { name: 'Ghana', code: 'GH', dialCode: '+233' },
-            { name: 'India', code: 'IN', dialCode: '+91' },
-            { name: 'Indonesia', code: 'ID', dialCode: '+62' },
-            { name: 'Iran', code: 'IR', dialCode: '+98' },
-            { name: 'Iraq', code: 'IQ', dialCode: '+964' },
-            { name: 'Israel', code: 'IL', dialCode: '+972' },
-            { name: 'Italy', code: 'IT', dialCode: '+39' },
-            { name: 'Japan', code: 'JP', dialCode: '+81' },
-            { name: 'Jordan', code: 'JO', dialCode: '+962' },
-            { name: 'Kenya', code: 'KE', dialCode: '+254' },
-            { name: 'Kuwait', code: 'KW', dialCode: '+965' },
-            { name: 'Lebanon', code: 'LB', dialCode: '+961' },
-            { name: 'Malaysia', code: 'MY', dialCode: '+60' },
-            { name: 'Mexico', code: 'MX', dialCode: '+52' },
-            { name: 'Morocco', code: 'MA', dialCode: '+212' },
-            { name: 'Netherlands', code: 'NL', dialCode: '+31' },
-            { name: 'Nigeria', code: 'NG', dialCode: '+234' },
-            { name: 'Norway', code: 'NO', dialCode: '+47' },
-            { name: 'Pakistan', code: 'PK', dialCode: '+92' },
-            { name: 'Philippines', code: 'PH', dialCode: '+63' },
-            { name: 'Poland', code: 'PL', dialCode: '+48' },
-            { name: 'Qatar', code: 'QA', dialCode: '+974' },
-            { name: 'Russia', code: 'RU', dialCode: '+7' },
-            { name: 'Rwanda', code: 'RW', dialCode: '+250' },
-            { name: 'Saudi Arabia', code: 'SA', dialCode: '+966' },
-            { name: 'Singapore', code: 'SG', dialCode: '+65' },
-            { name: 'South Africa', code: 'ZA', dialCode: '+27' },
-            { name: 'South Korea', code: 'KR', dialCode: '+82' },
-            { name: 'Spain', code: 'ES', dialCode: '+34' },
-            { name: 'Sri Lanka', code: 'LK', dialCode: '+94' },
-            { name: 'Sweden', code: 'SE', dialCode: '+46' },
-            { name: 'Switzerland', code: 'CH', dialCode: '+41' },
-            { name: 'Tanzania', code: 'TZ', dialCode: '+255' },
-            { name: 'Thailand', code: 'TH', dialCode: '+66' },
-            { name: 'Turkey', code: 'TR', dialCode: '+90' },
-            { name: 'Uganda', code: 'UG', dialCode: '+256' },
-            { name: 'Ukraine', code: 'UA', dialCode: '+380' },
-            { name: 'United Arab Emirates', code: 'AE', dialCode: '+971' },
-            { name: 'United Kingdom', code: 'GB', dialCode: '+44' },
-            { name: 'United States', code: 'US', dialCode: '+1' },
-            { name: 'Vietnam', code: 'VN', dialCode: '+84' },
-        ];
-
-        const CREDIT_PACKAGES = [
-            {
-                id: '1',
-                name: '10 Credits',
-                credits: 10,
-                priceUSD: 1,
-                isUnlimited: false,
-            },
-            {
-                id: '2',
-                name: 'Unlimited Messages (1 Month)',
-                credits: 0,
-                priceUSD: 5,
-                isUnlimited: true,
-                duration: 30,
-            },
-            {
-                id: '3',
-                name: 'Unlimited Messages (1 Month Premium)',
-                credits: 0,
-                priceUSD: 10,
-                isUnlimited: true,
-                duration: 30,
-            },
-        ];
-
-        const FAKE_MATCHES = [
+        // Sample matches data
+        const sampleMatches = [
             {
                 id: '1',
                 name: 'Emma Rodriguez',
@@ -238,7 +844,6 @@
                 isOnline: true,
                 lastMessage: 'Hey there! How are you?',
                 unreadCount: 2,
-                lastActivity: Date.now() - 300000,
                 hasLiked: false,
             },
             {
@@ -251,24 +856,10 @@
                 isOnline: true,
                 lastMessage: 'Nice to meet you!',
                 unreadCount: 1,
-                lastActivity: Date.now() - 600000,
                 hasLiked: true,
             },
             {
                 id: '3',
-                name: 'Isabella Santos',
-                age: 28,
-                country: 'Brazil',
-                sex: 'female',
-                profileImage: 'https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
-                isOnline: false,
-                lastMessage: 'Hope to hear from you soon!',
-                unreadCount: 0,
-                lastActivity: Date.now() - 1800000,
-                hasLiked: false,
-            },
-            {
-                id: '4',
                 name: 'James Wilson',
                 age: 29,
                 country: 'United States',
@@ -277,79 +868,532 @@
                 isOnline: true,
                 lastMessage: 'Hey! How\'s your day going?',
                 unreadCount: 1,
-                lastActivity: Date.now() - 450000,
                 hasLiked: false,
             },
             {
-                id: '5',
+                id: '4',
                 name: 'Carlos Martinez',
                 age: 31,
                 country: 'Mexico',
                 sex: 'male',
                 profileImage: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
-                isOnline: true,
-                lastMessage: 'Nice profile!',
-                unreadCount: 2,
-                lastActivity: Date.now() - 750000,
-                hasLiked: true,
-            },
-            {
-                id: '6',
-                name: 'Ahmed Hassan',
-                age: 27,
-                country: 'Egypt',
-                sex: 'male',
-                profileImage: 'https://images.pexels.com/photos/1043473/pexels-photo-1043473.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
                 isOnline: false,
-                lastMessage: 'Looking forward to getting to know you',
+                lastMessage: 'Nice profile!',
                 unreadCount: 0,
-                lastActivity: Date.now() - 1500000,
-                hasLiked: false,
-            },
+                hasLiked: true,
+            }
         ];
 
-        // Storage functions
-        function getCurrentUser() {
-            const user = localStorage.getItem('zuri_current_user');
-            return user ? JSON.parse(user) : null;
-        }
+        // DOM Elements
+        const authScreen = document.getElementById('authScreen');
+        const mainScreen = document.getElementById('mainScreen');
+        const chatScreen = document.getElementById('chatScreen');
+        const authForm = document.getElementById('authForm');
+        const switchModeBtn = document.getElementById('switchMode');
+        const registrationFields = document.getElementById('registrationFields');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
 
-        function setCurrentUser(user) {
-            if (user) {
-                localStorage.setItem('zuri_current_user', JSON.stringify(user));
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            setupEventListeners();
+            loadStoredData();
+        });
+
+        function initializeApp() {
+            // Check if user is logged in
+            const storedUser = localStorage.getItem('zuriLoveUser');
+            if (storedUser) {
+                currentUser = JSON.parse(storedUser);
+                showMainScreen();
             } else {
-                localStorage.removeItem('zuri_current_user');
+                showAuthScreen();
             }
         }
 
-        function getUsers() {
-            const users = localStorage.getItem('zuri_users');
-            return users ? JSON.parse(users) : [];
+        function setupEventListeners() {
+            // Auth form events
+            authForm.addEventListener('submit', handleAuthSubmit);
+            switchModeBtn.addEventListener('click', toggleAuthMode);
+            
+            // Password toggle
+            document.getElementById('togglePassword').addEventListener('click', togglePasswordVisibility);
+            
+            // Profile image upload
+            document.getElementById('profileImage').addEventListener('change', handleProfileImageUpload);
+            document.getElementById('profileImageEdit').addEventListener('change', handleProfileImageEdit);
+            
+            // Header buttons
+            document.getElementById('buyCreditsBtn')?.addEventListener('click', () => showModal('buyCreditsModal'));
+            document.getElementById('notificationsBtn')?.addEventListener('click', () => showModal('notificationsModal'));
+            document.getElementById('profileBtn')?.addEventListener('click', () => showModal('profileModal'));
+            document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
+            
+            // Mobile menu
+            document.getElementById('mobileMenuBtn')?.addEventListener('click', toggleMobileMenu);
+            document.getElementById('buyCreditsMenuBtn')?.addEventListener('click', () => {
+                toggleMobileMenu();
+                showModal('buyCreditsModal');
+            });
+            document.getElementById('profileMenuBtn')?.addEventListener('click', () => {
+                toggleMobileMenu();
+                showModal('profileModal');
+            });
+            document.getElementById('transactionMenuBtn')?.addEventListener('click', () => {
+                toggleMobileMenu();
+                showModal('transactionModal');
+            });
+            document.getElementById('supportMenuBtn')?.addEventListener('click', () => {
+                toggleMobileMenu();
+                showModal('supportModal');
+            });
+            document.getElementById('logoutMenuBtn')?.addEventListener('click', () => {
+                toggleMobileMenu();
+                handleLogout();
+            });
+            document.getElementById('notificationsBtnMobile')?.addEventListener('click', () => showModal('notificationsModal'));
+            
+            // Chat events
+            document.getElementById('backToMatches')?.addEventListener('click', showMainScreen);
+            document.getElementById('sendMessageBtn')?.addEventListener('click', sendMessage);
+            document.getElementById('messageInput')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            document.getElementById('unlockChatBtn')?.addEventListener('click', () => showModal('buyCreditsModal'));
+            
+            // Modal close events
+            setupModalEvents();
+            
+            // Buy credits events
+            setupBuyCreditsEvents();
+            
+            // Profile form events
+            setupProfileEvents();
+            
+            // Auto-resize textarea
+            const messageInput = document.getElementById('messageInput');
+            if (messageInput) {
+                messageInput.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+                });
+            }
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#mobileMenuBtn') && !e.target.closest('#mobileMenu')) {
+                    document.getElementById('mobileMenu').classList.remove('show');
+                }
+            });
         }
 
-        function setUsers(users) {
-            localStorage.setItem('zuri_users', JSON.stringify(users));
+        function setupModalEvents() {
+            // Close modal buttons
+            document.getElementById('closeBuyCredits')?.addEventListener('click', () => hideModal('buyCreditsModal'));
+            document.getElementById('closeProfile')?.addEventListener('click', () => hideModal('profileModal'));
+            document.getElementById('closeTransaction')?.addEventListener('click', () => hideModal('transactionModal'));
+            document.getElementById('closeSupport')?.addEventListener('click', () => hideModal('supportModal'));
+            document.getElementById('closeNotifications')?.addEventListener('click', () => hideModal('notificationsModal'));
+            document.getElementById('closeSuccess')?.addEventListener('click', () => hideModal('successModal'));
+            
+            // Close modals when clicking outside
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.classList.remove('show');
+                    }
+                });
+            });
         }
 
-        function getNotifications() {
-            const notifications = localStorage.getItem('zuri_notifications');
-            return notifications ? JSON.parse(notifications) : [];
+        function setupBuyCreditsEvents() {
+            // Package selection
+            document.querySelectorAll('[data-package]').forEach(packageEl => {
+                packageEl.addEventListener('click', function() {
+                    const packageId = this.dataset.package;
+                    selectPackage(packageId);
+                });
+            });
+            
+            // Currency change
+            document.getElementById('currencySelect')?.addEventListener('change', updatePrices);
+            
+            // Payment form
+            document.getElementById('confirmPayment')?.addEventListener('click', processPayment);
+            document.getElementById('backToPackages')?.addEventListener('click', showPackageSelection);
+            document.getElementById('cancelBuyCredits')?.addEventListener('click', () => hideModal('buyCreditsModal'));
         }
 
-        function setNotifications(notifs) {
-            localStorage.setItem('zuri_notifications', JSON.stringify(notifs));
+        function setupProfileEvents() {
+            document.getElementById('profileForm')?.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveProfile();
+            });
+            document.getElementById('cancelProfile')?.addEventListener('click', () => hideModal('profileModal'));
         }
 
-        function getTransactions() {
-            const transactions = localStorage.getItem('zuri_transactions');
-            return transactions ? JSON.parse(transactions) : [];
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!email || !password) {
+                showError('Please fill in all required fields');
+                return;
+            }
+            
+            if (isLogin) {
+                // Login logic
+                const users = JSON.parse(localStorage.getItem('zuriLoveUsers') || '[]');
+                const user = users.find(u => u.email === email && u.password === password);
+                
+                if (user) {
+                    currentUser = user;
+                    localStorage.setItem('zuriLoveUser', JSON.stringify(user));
+                    showMainScreen();
+                } else {
+                    showError('Invalid email or password');
+                }
+            } else {
+                // Registration logic
+                const formData = new FormData(authForm);
+                const userData = Object.fromEntries(formData.entries());
+                
+                // Validate required fields
+                const requiredFields = ['email', 'password', 'fullName', 'age', 'height', 'country', 'countryCode', 'phoneNumber', 'sex', 'lookingFor', 'relationshipStatus', 'relationshipType'];
+                const missingFields = requiredFields.filter(field => !userData[field]);
+                
+                if (missingFields.length > 0) {
+                    showError('Please fill in all required fields');
+                    return;
+                }
+                
+                // Check if email already exists
+                const users = JSON.parse(localStorage.getItem('zuriLoveUsers') || '[]');
+                if (users.find(u => u.email === email)) {
+                    showError('Email already exists');
+                    return;
+                }
+                
+                // Create new user
+                const newUser = {
+                    id: Date.now().toString(),
+                    email: userData.email,
+                    password: userData.password,
+                    name: userData.fullName,
+                    age: parseInt(userData.age),
+                    height: userData.height,
+                    country: userData.country,
+                    countryCode: userData.countryCode,
+                    phoneNumber: userData.phoneNumber,
+                    sex: userData.sex,
+                    lookingFor: userData.lookingFor,
+                    relationshipStatus: userData.relationshipStatus,
+                    relationshipType: userData.relationshipType,
+                    profileImage: document.getElementById('previewImg')?.src || '',
+                    credits: 5,
+                    isOnline: true,
+                    hasUnlimitedMessages: false,
+                    unlimitedUntil: null
+                };
+                
+                users.push(newUser);
+                localStorage.setItem('zuriLoveUsers', JSON.stringify(users));
+                
+                currentUser = newUser;
+                localStorage.setItem('zuriLoveUser', JSON.stringify(newUser));
+                
+                // Send registration email
+                sendRegistrationEmail(newUser);
+                
+                showMainScreen();
+            }
         }
 
-        function setTransactions(trans) {
-            localStorage.setItem('zuri_transactions', JSON.stringify(trans));
+        function toggleAuthMode() {
+            isLogin = !isLogin;
+            
+            if (isLogin) {
+                document.getElementById('authSubtitle').textContent = 'Welcome back!';
+                document.getElementById('submitText').textContent = 'Sign In';
+                document.getElementById('switchText').textContent = "Don't have an account?";
+                document.getElementById('switchButton').textContent = 'Sign Up';
+                registrationFields.classList.add('hidden');
+            } else {
+                document.getElementById('authSubtitle').textContent = 'Find your perfect match';
+                document.getElementById('submitText').textContent = 'Create Account';
+                document.getElementById('switchText').textContent = 'Already have an account?';
+                document.getElementById('switchButton').textContent = 'Sign In';
+                registrationFields.classList.remove('hidden');
+            }
+            
+            hideError();
         }
 
-        // Utility functions
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const toggleBtn = document.getElementById('togglePassword');
+            const icon = toggleBtn.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                passwordInput.type = 'password';
+                icon.setAttribute('data-lucide', 'eye');
+            }
+            
+            lucide.createIcons();
+        }
+
+        function handleProfileImageUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewImg = document.getElementById('previewImg');
+                    const imagePreview = document.getElementById('imagePreview');
+                    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+                    
+                    previewImg.src = e.target.result;
+                    imagePreview.classList.remove('hidden');
+                    uploadPlaceholder.classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleProfileImageEdit(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profileImageDisplay').src = e.target.result;
+                    showSuccessMessage('Profile image updated! Changes will be reviewed.');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
+
+        function showAuthScreen() {
+            authScreen.classList.remove('hidden');
+            mainScreen.classList.add('hidden');
+            chatScreen.classList.add('hidden');
+        }
+
+        function showMainScreen() {
+            authScreen.classList.add('hidden');
+            mainScreen.classList.remove('hidden');
+            chatScreen.classList.add('hidden');
+            
+            updateUserDisplay();
+            loadMatches();
+            generateNotifications();
+        }
+
+        function showChatScreen(match) {
+            currentMatch = match;
+            authScreen.classList.add('hidden');
+            mainScreen.classList.add('hidden');
+            chatScreen.classList.remove('hidden');
+            
+            setupChatScreen(match);
+        }
+
+        function updateUserDisplay() {
+            if (!currentUser) return;
+            
+            const creditsDisplay = currentUser.hasUnlimitedMessages && 
+                currentUser.unlimitedUntil && 
+                currentUser.unlimitedUntil > Date.now() ? '∞' : currentUser.credits;
+            
+            document.getElementById('creditsDisplay').textContent = creditsDisplay;
+            document.getElementById('creditsMobile').textContent = creditsDisplay === '∞' ? 'Unlimited' : creditsDisplay;
+            
+            // Update profile form
+            if (document.getElementById('profileName')) {
+                document.getElementById('profileName').value = currentUser.name || '';
+                document.getElementById('profileAge').value = currentUser.age || '';
+                document.getElementById('profileHeight').value = currentUser.height || '';
+                document.getElementById('profileCountry').value = currentUser.country || '';
+                document.getElementById('profileEmail').value = currentUser.email || '';
+            }
+        }
+
+        function loadMatches() {
+            if (!currentUser) return;
+            
+            // Filter matches based on user preferences
+            matches = sampleMatches.filter(match => match.sex === currentUser.lookingFor);
+            
+            const matchesGrid = document.getElementById('matchesGrid');
+            const matchesCount = document.getElementById('matchesCount');
+            
+            matchesCount.textContent = `${matches.length} people are waiting to meet you`;
+            
+            matchesGrid.innerHTML = matches.map(match => `
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                    <div class="relative">
+                        <img src="${match.profileImage}" alt="${match.name}" class="w-full h-48 object-cover">
+                        ${match.isOnline ? '<div class="absolute top-3 right-3 w-3 h-3 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>' : ''}
+                        ${match.unreadCount > 0 ? `<div class="absolute top-3 left-3 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-pulse">${match.unreadCount}</div>` : ''}
+                        ${match.hasLiked ? '<div class="absolute bottom-3 right-3 bg-pink-500 text-white rounded-full p-2"><i data-lucide="heart" class="w-4 h-4"></i></div>' : ''}
+                    </div>
+                    
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">${match.name}</h3>
+                        <p class="text-sm text-gray-600 mb-3 flex items-center gap-1">
+                            <i data-lucide="users" class="w-3 h-3"></i>
+                            ${match.age} • ${match.country}
+                        </p>
+                        
+                        ${match.lastMessage ? `
+                            <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                                <p class="text-sm text-gray-600 line-clamp-2">${match.lastMessage}</p>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="flex gap-2">
+                            <button onclick="openChat('${match.id}')" class="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:from-pink-600 hover:to-purple-700 transition-all flex items-center justify-center gap-2">
+                                <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                ${hasCreditsOrUnlimited() ? 'Chat' : 'Unlock Chat'}
+                            </button>
+                            <button onclick="likeMatch('${match.id}')" class="bg-gray-200 text-gray-800 hover:bg-gray-300 p-2 rounded-lg transition-colors ${match.hasLiked ? 'bg-pink-500 text-white hover:bg-pink-600' : ''}">
+                                <i data-lucide="heart" class="w-4 h-4 ${match.hasLiked ? 'fill-current' : ''}"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            lucide.createIcons();
+        }
+
+        function openChat(matchId) {
+            const match = matches.find(m => m.id === matchId);
+            if (match) {
+                showChatScreen(match);
+            }
+        }
+
+        function likeMatch(matchId) {
+            if (!hasCreditsOrUnlimited()) {
+                showModal('buyCreditsModal');
+                return;
+            }
+            
+            const matchIndex = matches.findIndex(m => m.id === matchId);
+            if (matchIndex !== -1) {
+                matches[matchIndex].hasLiked = !matches[matchIndex].hasLiked;
+                
+                // Deduct credit if not unlimited
+                if (!currentUser.hasUnlimitedMessages) {
+                    currentUser.credits = Math.max(0, currentUser.credits - 1);
+                    updateUserInStorage();
+                }
+                
+                loadMatches();
+                updateUserDisplay();
+            }
+        }
+
+        function setupChatScreen(match) {
+            document.getElementById('chatUserImage').src = match.profileImage;
+            document.getElementById('chatUserName').textContent = match.name;
+            document.getElementById('chatUserStatus').textContent = match.isOnline ? 'Online' : 'Offline';
+            
+            if (match.isOnline) {
+                document.getElementById('chatUserOnline').classList.remove('hidden');
+            } else {
+                document.getElementById('chatUserOnline').classList.add('hidden');
+            }
+            
+            const hasCredits = hasCreditsOrUnlimited();
+            const chatMessages = document.getElementById('chatMessages');
+            const chatLocked = document.getElementById('chatLocked');
+            const chatInput = document.getElementById('chatInput');
+            
+            if (hasCredits) {
+                chatMessages.classList.remove('hidden');
+                chatInput.classList.remove('hidden');
+                chatLocked.classList.add('hidden');
+                
+                // Load sample messages
+                chatMessages.innerHTML = `
+                    <div class="flex justify-end">
+                        <div class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-2xl max-w-xs">
+                            <p class="text-sm">Hey! Nice to meet you</p>
+                            <p class="text-xs opacity-75 mt-1">12:34 PM</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-start">
+                        <div class="bg-white border px-4 py-2 rounded-2xl max-w-xs">
+                            <p class="text-sm text-gray-800">${match.lastMessage || 'Hi there!'}</p>
+                            <p class="text-xs text-gray-500 mt-1">12:35 PM</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                chatMessages.classList.add('hidden');
+                chatInput.classList.add('hidden');
+                chatLocked.classList.remove('hidden');
+            }
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message || !hasCreditsOrUnlimited()) return;
+            
+            // Add message to chat
+            const chatMessages = document.getElementById('chatMessages');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'flex justify-end';
+            messageEl.innerHTML = `
+                <div class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-2xl max-w-xs">
+                    <p class="text-sm">${message}</p>
+                    <p class="text-xs opacity-75 mt-1">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                </div>
+            `;
+            chatMessages.appendChild(messageEl);
+            
+            // Clear input
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            
+            // Deduct credit if not unlimited
+            if (!currentUser.hasUnlimitedMessages) {
+                currentUser.credits = Math.max(0, currentUser.credits - 1);
+                updateUserInStorage();
+                updateUserDisplay();
+                
+                // Check if user ran out of credits
+                if (currentUser.credits === 0) {
+                    setTimeout(() => {
+                        showModal('buyCreditsModal');
+                    }, 1000);
+                }
+            }
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
         function hasCreditsOrUnlimited() {
             if (!currentUser) return false;
             
@@ -361,1578 +1405,365 @@
             return currentUser.credits > 0;
         }
 
-        function getLocalPrice(pkg) {
-            return (pkg.priceUSD * selectedCurrency.rate).toFixed(2);
-        }
-
-        function formatDate(timestamp) {
-            return new Date(timestamp).toLocaleDateString();
-        }
-
-        function formatTime(timestamp) {
-            return new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        }
-
-        // Email functions
-        async function sendRegistrationEmail(userData) {
-            try {
-                const templateParams = {
-                    user_name: userData.name,
-                    user_email: userData.email,
-                    user_age: userData.age,
-                    user_height: userData.height,
-                    user_country: userData.country,
-                    user_phone: userData.countryCode + userData.phoneNumber,
-                    user_sex: userData.sex,
-                    relationship_status: userData.relationshipStatus,
-                    looking_for: userData.lookingFor,
-                    relationship_type: userData.relationshipType,
-                };
-
-                await emailjs.send(
-                    'service_7e51cwp',
-                    'template_sf4bm9j',
-                    templateParams,
-                    'LMdaXNTSTm33O5BqT'
-                );
-            } catch (error) {
-                console.error('Failed to send registration email:', error);
-            }
-        }
-
-        async function sendPaymentEmail(user, packageData, amount, transactionId, currency) {
-            try {
-                const templateParams = {
-                    user_name: user.name,
-                    user_email: user.email,
-                    user_phone: user.countryCode + user.phoneNumber,
-                    package_name: packageData.name,
-                    amount_paid: `${currency.symbol}${amount}`,
-                    transaction_id: transactionId,
-                    currency: currency.code,
-                };
-
-                await emailjs.send(
-                    'service_7e51cwp',
-                    'template_6rl4ss2',
-                    templateParams,
-                    'LMdaXNTSTm33O5BqT'
-                );
-            } catch (error) {
-                console.error('Failed to send payment email:', error);
-            }
-        }
-
-        // Event handlers
-        function handleLogin(e) {
-            e.preventDefault();
-            error = '';
-
-            const trimmedEmail = formData.email.trim();
-            const trimmedPassword = formData.password.trim();
-
-            if (!trimmedEmail) {
-                showAlertModal('Email address is required', 'error');
-                return;
-            }
-
-            if (!trimmedPassword) {
-                showAlertModal('Password is required', 'error');
-                return;
-            }
-
-            const users = getUsers();
-
-            if (isLogin) {
-                const user = users.find(u => u.email === trimmedEmail && u.password === trimmedPassword);
-                if (user) {
-                    currentUser = user;
-                    setCurrentUser(user);
-                    currentView = 'main';
-                    initializeApp();
-                } else {
-                    showAlertModal('Invalid email or password', 'error');
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('show');
+                
+                // Load modal content based on type
+                if (modalId === 'profileModal') {
+                    loadProfileData();
+                } else if (modalId === 'transactionModal') {
+                    loadTransactionHistory();
+                } else if (modalId === 'notificationsModal') {
+                    loadNotifications();
+                } else if (modalId === 'buyCreditsModal') {
+                    resetBuyCreditsModal();
                 }
-            } else {
-                if (users.find(u => u.email === trimmedEmail)) {
-                    showAlertModal('Email already exists', 'error');
-                    return;
-                }
-
-                const newUser = {
-                    id: Date.now().toString(),
-                    email: trimmedEmail,
-                    password: trimmedPassword,
-                    name: formData.name.trim(),
-                    age: parseInt(formData.age),
-                    height: formData.height.trim(),
-                    country: formData.country,
-                    countryCode: formData.countryCode,
-                    phoneNumber: formData.phoneNumber.trim(),
-                    relationshipStatus: formData.relationshipStatus,
-                    lookingFor: formData.lookingFor,
-                    relationshipType: formData.relationshipType,
-                    sex: formData.sex,
-                    profileImage,
-                    credits: 5,
-                    isOnline: true,
-                };
-
-                users.push(newUser);
-                setUsers(users);
-                
-                sendRegistrationEmail(newUser);
-                currentUser = newUser;
-                setCurrentUser(newUser);
-                currentView = 'main';
-                initializeApp();
-            }
-            render();
-        }
-
-        function handleImageUpload(e) {
-            const file = e.target.files?.[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    if (currentView === 'auth') {
-                        profileImage = e.target.result;
-                    } else {
-                        editFormData.profileImage = e.target.result;
-                    }
-                    render();
-                };
-                reader.readAsDataURL(file);
             }
         }
 
-        function handleCountrySelect(countryName) {
-            const country = COUNTRIES.find(c => c.name === countryName);
-            if (country) {
-                formData.country = country.name;
-                formData.countryCode = country.dialCode;
-                showCountryDropdown = false;
-                render();
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('show');
             }
         }
 
-        function handleCurrencySelect(currencyCode) {
-            const currency = CURRENCIES.find(c => c.code === currencyCode);
-            if (currency) {
-                selectedCurrency = currency;
-                showCurrencyDropdown = false;
-                render();
-            }
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            mobileMenu.classList.toggle('show');
         }
 
-        function handlePackageSelect(pkg) {
-            selectedPackage = pkg;
-            showPayment = true;
-            render();
+        function resetBuyCreditsModal() {
+            document.getElementById('buyCreditsContent').classList.remove('hidden');
+            document.getElementById('paymentForm').classList.add('hidden');
+            document.getElementById('paymentSuccess').classList.add('hidden');
+            document.getElementById('transactionId').value = '';
+            document.getElementById('paymentError').classList.add('hidden');
+            updatePrices();
         }
 
-        async function handlePayment() {
-            if (!transactionId.trim()) {
-                error = 'Please enter transaction ID';
-                render();
-                return;
-            }
-
-            error = '';
-            // Simple validation - in real app, this would verify with payment provider
-            if (transactionId.length >= 8) {
-                let updatedUser = { ...currentUser };
-                
-                if (selectedPackage.id === '1') {
-                    updatedUser.credits = currentUser.credits + 10;
-                } else if (selectedPackage.id === '2' || selectedPackage.id === '3') {
-                    updatedUser.hasUnlimitedMessages = true;
-                    updatedUser.unlimitedUntil = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 days
-                }
-                
-                currentUser = updatedUser;
-                setCurrentUser(updatedUser);
-                
-                // Update users array
-                const users = getUsers();
-                const updatedUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
-                setUsers(updatedUsers);
-
-                // Add transaction record
-                const newTransaction = {
-                    id: Date.now().toString(),
-                    packageName: selectedPackage.name,
-                    amount: `${selectedCurrency.symbol}${getLocalPrice(selectedPackage)}`,
-                    currency: selectedCurrency.code,
-                    date: Date.now(),
-                    status: 'Completed'
-                };
-                
-                transactions.push(newTransaction);
-                setTransactions(transactions);
-                
-                // Send payment email
-                await sendPaymentEmail(currentUser, selectedPackage, getLocalPrice(selectedPackage), transactionId, selectedCurrency);
-                
-                showSuccess = true;
-                transactionId = '';
-                setTimeout(() => {
-                    showSuccess = false;
-                    showPayment = false;
-                    selectedPackage = null;
-                    showBuyCredits = false;
-                    render();
-                }, 3000);
-                render();
-            } else {
-                error = 'Invalid transaction ID. Please check and try again.';
-                render();
-            }
-        }
-
-        function handleChatClick(match) {
-            selectedMatch = match;
-            currentView = 'chat';
-            // Initialize chat messages for this match
-            chatMessages = [
-                {
-                    id: '1',
-                    text: 'Hey! Nice to meet you',
-                    sender: 'user',
-                    timestamp: Date.now() - 300000
-                },
-                {
-                    id: '2',
-                    text: match.lastMessage,
-                    sender: 'match',
-                    timestamp: Date.now() - 60000
-                }
-            ];
-            render();
-        }
-
-        function handleSendMessage() {
-            if (!currentMessage.trim() || !hasCreditsOrUnlimited()) return;
-
-            // Add message to chat
-            chatMessages.push({
-                id: Date.now().toString(),
-                text: currentMessage.trim(),
-                sender: 'user',
-                timestamp: Date.now()
+        function updatePrices() {
+            const selectedCurrency = document.getElementById('currencySelect').value;
+            const rate = currencyRates[selectedCurrency];
+            const symbol = currencySymbols[selectedCurrency];
+            
+            document.querySelectorAll('[data-price]').forEach(priceEl => {
+                const usdPrice = parseFloat(priceEl.dataset.price);
+                const localPrice = (usdPrice * rate).toFixed(2);
+                priceEl.textContent = `${symbol}${localPrice}`;
             });
-
-            // Deduct credit if not unlimited
-            if (!currentUser.hasUnlimitedMessages) {
-                currentUser.credits = currentUser.credits - 1;
-                setCurrentUser(currentUser);
-                
-                // Update users array
-                const users = getUsers();
-                const updatedUsers = users.map(u => u.id === currentUser.id ? currentUser : u);
-                setUsers(updatedUsers);
-            }
-
-            currentMessage = '';
-            render();
-
-            // Simulate response after 2 seconds
-            setTimeout(() => {
-                chatMessages.push({
-                    id: (Date.now() + 1).toString(),
-                    text: 'Thanks for your message! 😊',
-                    sender: 'match',
-                    timestamp: Date.now()
-                });
-                render();
-            }, 2000);
         }
 
-        function handleLikeMatch(matchId) {
-            if (!hasCreditsOrUnlimited()) {
-                showBuyCredits = true;
-                render();
-                return;
-            }
+        function selectPackage(packageId) {
+            const packages = {
+                '1': { name: '10 Credits', credits: 10, price: 1 },
+                '2': { name: 'Unlimited Messages (1 Month)', credits: 0, price: 5, unlimited: true },
+                '3': { name: 'Unlimited Messages (1 Month Premium)', credits: 0, price: 10, unlimited: true }
+            };
+            
+            const selectedPackage = packages[packageId];
+            const selectedCurrency = document.getElementById('currencySelect').value;
+            const rate = currencyRates[selectedCurrency];
+            const symbol = currencySymbols[selectedCurrency];
+            const localPrice = (selectedPackage.price * rate).toFixed(2);
+            
+            document.getElementById('selectedPackageName').textContent = selectedPackage.name;
+            document.getElementById('selectedPackagePrice').textContent = `${symbol}${localPrice}`;
+            document.getElementById('paymentAmount').textContent = `${symbol}${localPrice}`;
+            
+            // Store selected package data
+            document.getElementById('confirmPayment').dataset.packageId = packageId;
+            document.getElementById('confirmPayment').dataset.price = localPrice;
+            document.getElementById('confirmPayment').dataset.currency = selectedCurrency;
+            
+            // Show payment form
+            document.getElementById('buyCreditsContent').classList.add('hidden');
+            document.getElementById('paymentForm').classList.remove('hidden');
+        }
 
-            // Find the match and toggle like
-            const matchIndex = matches.findIndex(m => m.id === matchId);
-            if (matchIndex !== -1) {
-                matches[matchIndex].hasLiked = !matches[matchIndex].hasLiked;
+        function showPackageSelection() {
+            document.getElementById('buyCreditsContent').classList.remove('hidden');
+            document.getElementById('paymentForm').classList.add('hidden');
+            document.getElementById('paymentSuccess').classList.add('hidden');
+        }
+
+        function processPayment() {
+            const transactionId = document.getElementById('transactionId').value.trim();
+            
+            if (!transactionId) {
+                showPaymentError('Please enter transaction ID');
+                return;
             }
             
-            // Deduct credit if not unlimited
-            if (!currentUser.hasUnlimitedMessages) {
-                currentUser.credits = currentUser.credits - 1;
-                setCurrentUser(currentUser);
-                
-                // Update users array
-                const users = getUsers();
-                const updatedUsers = users.map(u => u.id === currentUser.id ? currentUser : u);
-                setUsers(updatedUsers);
+            if (transactionId.length < 8) {
+                showPaymentError('Invalid transaction ID. Please check and try again.');
+                return;
             }
+            
+            const packageId = document.getElementById('confirmPayment').dataset.packageId;
+            const price = document.getElementById('confirmPayment').dataset.price;
+            const currency = document.getElementById('confirmPayment').dataset.currency;
+            
+            // Process payment
+            if (packageId === '1') {
+                currentUser.credits += 10;
+            } else {
+                currentUser.hasUnlimitedMessages = true;
+                currentUser.unlimitedUntil = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 days
+            }
+            
+            // Add transaction to history
+            const transaction = {
+                id: Date.now().toString(),
+                packageName: document.getElementById('selectedPackageName').textContent,
+                amount: `${currencySymbols[currency]}${price}`,
+                currency: currency,
+                date: new Date().toLocaleDateString(),
+                status: 'Completed'
+            };
+            
+            transactions.push(transaction);
+            localStorage.setItem('zuriLoveTransactions', JSON.stringify(transactions));
+            
+            updateUserInStorage();
+            updateUserDisplay();
+            
+            // Send payment email
+            sendPaymentEmail(currentUser, transaction);
+            
+            // Show success
+            const successMessage = packageId === '1' 
+                ? '10 credits have been added to your account'
+                : 'Unlimited messages activated for 1 month!';
+            
+            document.getElementById('successMessage').textContent = successMessage;
+            document.getElementById('paymentForm').classList.add('hidden');
+            document.getElementById('paymentSuccess').classList.remove('hidden');
+            
+            setTimeout(() => {
+                hideModal('buyCreditsModal');
+            }, 3000);
+        }
 
-            render();
+        function showPaymentError(message) {
+            document.getElementById('paymentErrorText').textContent = message;
+            document.getElementById('paymentError').classList.remove('hidden');
+        }
+
+        function loadProfileData() {
+            if (!currentUser) return;
+            
+            document.getElementById('profileName').value = currentUser.name || '';
+            document.getElementById('profileAge').value = currentUser.age || '';
+            document.getElementById('profileHeight').value = currentUser.height || '';
+            document.getElementById('profileCountry').value = currentUser.country || '';
+            document.getElementById('profileEmail').value = currentUser.email || '';
+            
+            if (currentUser.profileImage) {
+                document.getElementById('profileImageDisplay').src = currentUser.profileImage;
+            }
+        }
+
+        function saveProfile() {
+            const formData = new FormData(document.getElementById('profileForm'));
+            
+            currentUser.name = formData.get('profileName');
+            currentUser.age = parseInt(formData.get('profileAge'));
+            currentUser.height = formData.get('profileHeight');
+            currentUser.country = formData.get('profileCountry');
+            
+            updateUserInStorage();
+            hideModal('profileModal');
+            showSuccessMessage('Profile updated successfully!');
+        }
+
+        function loadTransactionHistory() {
+            const transactionList = document.getElementById('transactionList');
+            const noTransactions = document.getElementById('noTransactions');
+            
+            if (transactions.length === 0) {
+                transactionList.classList.add('hidden');
+                noTransactions.classList.remove('hidden');
+            } else {
+                transactionList.classList.remove('hidden');
+                noTransactions.classList.add('hidden');
+                
+                transactionList.innerHTML = transactions.map(transaction => `
+                    <div class="border rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-semibold text-gray-800">${transaction.packageName}</h4>
+                            <span class="text-green-600 text-sm font-medium">${transaction.status}</span>
+                        </div>
+                        <p class="text-gray-600 text-sm">Amount: ${transaction.amount}</p>
+                        <p class="text-gray-600 text-sm">Date: ${transaction.date}</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function loadNotifications() {
+            const notificationsList = document.getElementById('notificationsList');
+            const noNotifications = document.getElementById('noNotifications');
+            
+            if (notifications.length === 0) {
+                notificationsList.classList.add('hidden');
+                noNotifications.classList.remove('hidden');
+            } else {
+                notificationsList.classList.remove('hidden');
+                noNotifications.classList.add('hidden');
+                
+                notificationsList.innerHTML = notifications.map(notification => `
+                    <div class="border rounded-lg p-4 ${notification.isRead ? 'bg-gray-50' : 'bg-blue-50'}">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center ${notification.type === 'message' ? 'bg-blue-100' : 'bg-pink-100'}">
+                                <i data-lucide="${notification.type === 'message' ? 'message-circle' : 'heart'}" class="w-4 h-4 ${notification.type === 'message' ? 'text-blue-600' : 'text-pink-600'}"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-800">${notification.title}</h4>
+                                <p class="text-gray-600 text-sm">${notification.message}</p>
+                                <p class="text-gray-500 text-xs mt-1">${new Date(notification.timestamp).toLocaleString()}</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Mark all as read
+                notifications.forEach(n => n.isRead = true);
+                localStorage.setItem('zuriLoveNotifications', JSON.stringify(notifications));
+                updateNotificationBadge();
+                
+                lucide.createIcons();
+            }
+        }
+
+        function generateNotifications() {
+            // Generate some sample notifications
+            if (notifications.length === 0 && matches.length > 0) {
+                const sampleNotifications = [
+                    {
+                        id: '1',
+                        type: 'message',
+                        title: 'New Message!',
+                        message: `${matches[0].name} sent you a message. Buy credits to unlock it.`,
+                        timestamp: Date.now() - 300000,
+                        isRead: false
+                    },
+                    {
+                        id: '2',
+                        type: 'like',
+                        title: 'Someone likes you!',
+                        message: `${matches[1]?.name || 'Someone'} liked your profile. Buy credits to see who.`,
+                        timestamp: Date.now() - 600000,
+                        isRead: false
+                    }
+                ];
+                
+                notifications.push(...sampleNotifications);
+                localStorage.setItem('zuriLoveNotifications', JSON.stringify(notifications));
+                updateNotificationBadge();
+            }
+        }
+
+        function updateNotificationBadge() {
+            const unreadCount = notifications.filter(n => !n.isRead).length;
+            const badge = document.getElementById('notificationBadge');
+            const badgeMobile = document.getElementById('notificationBadgeMobile');
+            
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+                badge.classList.remove('hidden');
+                badgeMobile.textContent = unreadCount;
+                badgeMobile.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+                badgeMobile.classList.add('hidden');
+            }
+        }
+
+        function updateUserInStorage() {
+            localStorage.setItem('zuriLoveUser', JSON.stringify(currentUser));
+            
+            // Also update in users array
+            const users = JSON.parse(localStorage.getItem('zuriLoveUsers') || '[]');
+            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            if (userIndex !== -1) {
+                users[userIndex] = currentUser;
+                localStorage.setItem('zuriLoveUsers', JSON.stringify(users));
+            }
+        }
+
+        function loadStoredData() {
+            // Load transactions
+            const storedTransactions = localStorage.getItem('zuriLoveTransactions');
+            if (storedTransactions) {
+                transactions = JSON.parse(storedTransactions);
+            }
+            
+            // Load notifications
+            const storedNotifications = localStorage.getItem('zuriLoveNotifications');
+            if (storedNotifications) {
+                notifications = JSON.parse(storedNotifications);
+                updateNotificationBadge();
+            }
         }
 
         function handleLogout() {
             currentUser = null;
-            setCurrentUser(null);
-            currentView = 'auth';
-            showUserMenu = false;
-            render();
+            localStorage.removeItem('zuriLoveUser');
+            showAuthScreen();
         }
 
-        function handleProfileSave() {
-            const updatedUser = {
-                ...currentUser,
-                name: editFormData.name,
-                age: parseInt(editFormData.age),
-                height: editFormData.height,
-                country: editFormData.country,
-                profileImage: editFormData.profileImage || currentUser.profileImage,
+        function showSuccessMessage(message) {
+            document.getElementById('successTitle').textContent = 'Success!';
+            document.getElementById('successText').textContent = message;
+            showModal('successModal');
+        }
+
+        // Email functions
+        function sendRegistrationEmail(userData) {
+            const templateParams = {
+                user_name: userData.name,
+                user_email: userData.email,
+                user_age: userData.age,
+                user_height: userData.height,
+                user_country: userData.country,
+                user_phone: userData.countryCode + userData.phoneNumber,
+                user_sex: userData.sex,
+                relationship_status: userData.relationshipStatus,
+                looking_for: userData.lookingFor,
+                relationship_type: userData.relationshipType,
             };
-            
-            currentUser = updatedUser;
-            setCurrentUser(updatedUser);
-            
-            // Update users array
-            const users = getUsers();
-            const updatedUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
-            setUsers(updatedUsers);
-            
-            isEditing = false;
-            showAlertModal('Profile updated successfully!', 'success');
-            render();
-        }
 
-        function handleProfileCancel() {
-            editFormData = {
-                name: currentUser.name,
-                age: currentUser.age.toString(),
-                height: currentUser.height,
-                country: currentUser.country,
-                profileImage: currentUser.profileImage || '',
-            };
-            isEditing = false;
-            render();
-        }
-
-        function showAlertModal(message, type = 'info') {
-            alertMessage = message;
-            alertType = type;
-            showAlert = true;
-            render();
-            
-            setTimeout(() => {
-                showAlert = false;
-                render();
-            }, 3000);
-        }
-
-        function initializeApp() {
-            if (!currentUser) return;
-
-            // Filter matches based on user preferences
-            const filteredMatches = FAKE_MATCHES.filter(match => match.sex === currentUser.lookingFor);
-            
-            // Sort matches: online first, then by last activity, then those with messages
-            matches = filteredMatches.sort((a, b) => {
-                if (a.isOnline && !b.isOnline) return -1;
-                if (!a.isOnline && b.isOnline) return 1;
-                if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
-                if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
-                return b.lastActivity - a.lastActivity;
-            });
-
-            // Initialize notifications
-            notifications = getNotifications();
-            transactions = getTransactions();
-
-            // Only create notifications if there are matches available
-            if (matches.length > 0) {
-                const notificationIntervals = [120000, 180000, 240000, 300000]; // 2min, 3min, 4min, 5min
-                
-                notificationIntervals.forEach((interval, index) => {
-                    setTimeout(() => {
-                        const randomMatch = matches[Math.floor(Math.random() * matches.length)];
-                        const notificationTypes = [
-                            {
-                                type: 'message',
-                                title: 'New Message!',
-                                message: `${randomMatch.name} sent you a message. Buy credits to unlock it.`,
-                            },
-                            {
-                                type: 'like',
-                                title: 'Someone likes you!',
-                                message: `${randomMatch.name} liked your profile. Buy credits to see who.`,
-                            }
-                        ];
-                        
-                        const notification = notificationTypes[Math.floor(Math.random() * notificationTypes.length)];
-                        
-                        const newNotification = {
-                            id: Date.now().toString() + index,
-                            type: notification.type,
-                            title: notification.title,
-                            message: notification.message,
-                            timestamp: Date.now(),
-                            isRead: false,
-                            data: { matchId: randomMatch.id },
-                        };
-                        
-                        notifications.push(newNotification);
-                        setNotifications(notifications);
-                        render();
-                    }, interval);
+            emailjs.send('service_7e51cwp', 'template_sf4bm9j', templateParams, 'LMdaXNTSTm33O5BqT')
+                .then(() => {
+                    console.log('Registration email sent successfully');
+                })
+                .catch((error) => {
+                    console.error('Failed to send registration email:', error);
                 });
-            }
-
-            // Shuffle matches every 5 minutes
-            setInterval(() => {
-                const onlineWithMessages = matches.filter(m => m.isOnline || m.unreadCount > 0);
-                const others = matches.filter(m => !m.isOnline && m.unreadCount === 0);
-                
-                // Shuffle others array
-                for (let i = others.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [others[i], others[j]] = [others[j], others[i]];
-                }
-                
-                matches = [...onlineWithMessages, ...others];
-                render();
-            }, 300000); // 5 minutes
         }
 
-        // Render functions
-        function renderAuthScreen() {
-            const creditsDisplay = currentUser?.hasUnlimitedMessages && 
-                currentUser?.unlimitedUntil && 
-                currentUser?.unlimitedUntil > Date.now() ? '∞' : currentUser?.credits || 0;
-
-            return `
-                <div class="min-h-screen gradient-bg flex items-center justify-center p-4">
-                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-                        <div class="p-8">
-                            <div class="text-center mb-8">
-                                <div class="flex items-center justify-center mb-4">
-                                    <svg class="text-pink-500 mr-2" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                    </svg>
-                                    <h1 class="text-3xl font-bold gradient-text">Zuri Love</h1>
-                                </div>
-                                <p class="text-gray-600">
-                                    ${isLogin ? 'Welcome back!' : 'Find your perfect match'}
-                                </p>
-                            </div>
-
-                            ${error ? `
-                                <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                                    <p class="text-red-600 text-sm">${error}</p>
-                                </div>
-                            ` : ''}
-
-                            <form onsubmit="handleLogin(event)" class="space-y-4">
-                                <input
-                                    type="email"
-                                    placeholder="Email"
-                                    value="${formData.email}"
-                                    oninput="formData.email = this.value"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                    required
-                                />
-
-                                <div class="relative">
-                                    <input
-                                        type="${showPassword ? 'text' : 'password'}"
-                                        placeholder="Password"
-                                        value="${formData.password}"
-                                        oninput="formData.password = this.value"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        onclick="showPassword = !showPassword; render()"
-                                        class="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
-                                    >
-                                        ${showPassword ? 
-                                            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>' :
-                                            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
-                                        }
-                                    </button>
-                                </div>
-
-                                ${!isLogin ? `
-                                    <input
-                                        type="text"
-                                        placeholder="Full Name"
-                                        value="${formData.name}"
-                                        oninput="formData.name = this.value"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                        required
-                                    />
-
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <input
-                                            type="number"
-                                            placeholder="Age"
-                                            value="${formData.age}"
-                                            oninput="formData.age = this.value"
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                            required
-                                        />
-                                        <input
-                                            type="text"
-                                            placeholder="Height"
-                                            value="${formData.height}"
-                                            oninput="formData.height = this.value"
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div class="relative">
-                                        <button
-                                            type="button"
-                                            onclick="showCountryDropdown = !showCountryDropdown; render()"
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-left flex items-center justify-between"
-                                        >
-                                            <span class="${formData.country ? 'text-gray-800' : 'text-gray-500'}">
-                                                ${formData.country || 'Select Country'}
-                                            </span>
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <polyline points="6,9 12,15 18,9"/>
-                                            </svg>
-                                        </button>
-                                        
-                                        ${showCountryDropdown ? `
-                                            <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                                ${COUNTRIES.map(country => `
-                                                    <button
-                                                        type="button"
-                                                        onclick="handleCountrySelect('${country.name}')"
-                                                        class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center justify-between"
-                                                    >
-                                                        <span>${country.name}</span>
-                                                        <span class="text-gray-500 text-sm">${country.dialCode}</span>
-                                                    </button>
-                                                `).join('')}
-                                            </div>
-                                        ` : ''}
-                                    </div>
-
-                                    <div class="flex gap-2">
-                                        <div class="w-20">
-                                            <input
-                                                type="text"
-                                                placeholder="+1"
-                                                value="${formData.countryCode}"
-                                                oninput="formData.countryCode = this.value"
-                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                                required
-                                            />
-                                        </div>
-                                        <div class="flex-1">
-                                            <input
-                                                type="tel"
-                                                placeholder="Phone Number"
-                                                value="${formData.phoneNumber}"
-                                                oninput="formData.phoneNumber = this.value"
-                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <select
-                                        value="${formData.sex}"
-                                        onchange="formData.sex = this.value"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none"
-                                        required
-                                    >
-                                        <option value="">Select Your Sex</option>
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                    </select>
-
-                                    <select
-                                        value="${formData.lookingFor}"
-                                        onchange="formData.lookingFor = this.value"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none"
-                                        required
-                                    >
-                                        <option value="">Looking For</option>
-                                        <option value="male">Men</option>
-                                        <option value="female">Women</option>
-                                    </select>
-
-                                    <select
-                                        value="${formData.relationshipStatus}"
-                                        onchange="formData.relationshipStatus = this.value"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none"
-                                        required
-                                    >
-                                        <option value="">Relationship Status</option>
-                                        <option value="single">Single</option>
-                                        <option value="divorced">Divorced</option>
-                                        <option value="widowed">Widowed</option>
-                                        <option value="separated">Separated</option>
-                                    </select>
-
-                                    <select
-                                        value="${formData.relationshipType}"
-                                        onchange="formData.relationshipType = this.value"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none"
-                                        required
-                                    >
-                                        <option value="">Relationship Type</option>
-                                        <option value="friendship">Friendship</option>
-                                        <option value="short-term">Short-term Relationship</option>
-                                        <option value="long-term">Long-term Relationship</option>
-                                        <option value="marriage">Marriage</option>
-                                    </select>
-
-                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-pink-500 transition-colors">
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onchange="handleImageUpload(event)"
-                                            class="hidden"
-                                            id="profile-image"
-                                        />
-                                        <label for="profile-image" class="cursor-pointer">
-                                            ${profileImage ? `
-                                                <img
-                                                    src="${profileImage}"
-                                                    alt="Profile"
-                                                    class="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
-                                                />
-                                            ` : `
-                                                <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                    <polyline points="7,10 12,15 17,10"/>
-                                                    <line x1="12" y1="15" x2="12" y2="3"/>
-                                                </svg>
-                                            `}
-                                            <p class="text-sm text-gray-600">
-                                                ${profileImage ? 'Change photo' : 'Upload profile photo'}
-                                            </p>
-                                        </label>
-                                    </div>
-                                ` : ''}
-
-                                <button type="submit" class="w-full gradient-button text-white font-medium py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-200">
-                                    ${isLogin ? 'Sign In' : 'Create Account'}
-                                </button>
-                            </form>
-
-                            <div class="mt-6 text-center">
-                                <p class="text-gray-600">
-                                    ${isLogin ? "Don't have an account?" : "Already have an account?"}
-                                    <button
-                                        onclick="isLogin = !isLogin; error = ''; render()"
-                                        class="text-pink-500 hover:text-pink-600 ml-1 font-medium"
-                                    >
-                                        ${isLogin ? 'Sign Up' : 'Sign In'}
-                                    </button>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderHeader() {
-            const creditsDisplay = currentUser.hasUnlimitedMessages && 
-                currentUser.unlimitedUntil && 
-                currentUser.unlimitedUntil > Date.now() ? '∞' : currentUser.credits;
-
-            const unreadNotifications = notifications.filter(n => !n.isRead).length;
-
-            return `
-                <div class="bg-white shadow-sm sticky top-0 z-40">
-                    <div class="max-w-6xl mx-auto px-4 py-4">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <svg class="text-pink-500 mr-2" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                </svg>
-                                <h1 class="text-2xl font-bold gradient-text whitespace-nowrap">Zuri Love</h1>
-                            </div>
-                            
-                            <div class="flex items-center gap-3">
-                                <button
-                                    onclick="showNotifications = !showNotifications; showUserMenu = false; render()"
-                                    class="relative p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors"
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                                    </svg>
-                                    ${unreadNotifications > 0 ? `
-                                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-badge">
-                                            ${unreadNotifications}
-                                        </span>
-                                    ` : ''}
-                                </button>
-                                
-                                <div class="relative">
-                                    <button
-                                        onclick="showUserMenu = !showUserMenu; showNotifications = false; render()"
-                                        class="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full transition-colors relative"
-                                    >
-                                        ${currentUser.profileImage ? `
-                                            <img
-                                                src="${currentUser.profileImage}"
-                                                alt="Profile"
-                                                class="w-5 h-5 rounded-full object-cover"
-                                            />
-                                        ` : `
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                                <circle cx="12" cy="7" r="4"/>
-                                            </svg>
-                                        `}
-                                    </button>
-
-                                    ${showUserMenu ? `
-                                        <div class="absolute top-12 right-0 bg-white rounded-lg shadow-xl border p-2 min-w-48 z-50">
-                                            <div class="flex items-center gap-2 p-3 border-b">
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-pink-500">
-                                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                                                    <line x1="8" y1="21" x2="16" y2="21"/>
-                                                    <line x1="12" y1="17" x2="12" y2="21"/>
-                                                </svg>
-                                                <span class="font-semibold">
-                                                    Credits: ${creditsDisplay === '∞' ? 'Unlimited' : creditsDisplay}
-                                                </span>
-                                            </div>
-                                            
-                                            <button
-                                                onclick="showBuyCredits = true; showUserMenu = false; render()"
-                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded text-left"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                                                    <line x1="8" y1="21" x2="16" y2="21"/>
-                                                    <line x1="12" y1="17" x2="12" y2="21"/>
-                                                </svg>
-                                                Buy Credits
-                                            </button>
-                                            
-                                            <button
-                                                onclick="showProfileSettings = true; showUserMenu = false; editFormData = { name: currentUser.name, age: currentUser.age.toString(), height: currentUser.height, country: currentUser.country, profileImage: currentUser.profileImage || '' }; render()"
-                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded text-left"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <circle cx="12" cy="12" r="3"/>
-                                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                                                </svg>
-                                                Profile Settings
-                                            </button>
-
-                                            <button
-                                                onclick="showTransactionHistory = true; showUserMenu = false; render()"
-                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded text-left"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                                    <polyline points="14,2 14,8 20,8"/>
-                                                    <line x1="16" y1="13" x2="8" y2="13"/>
-                                                    <line x1="16" y1="17" x2="8" y2="17"/>
-                                                    <polyline points="10,9 9,9 8,9"/>
-                                                </svg>
-                                                Transaction History
-                                            </button>
-
-                                            <button
-                                                onclick="showSupport = true; showUserMenu = false; render()"
-                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded text-left"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <circle cx="12" cy="12" r="10"/>
-                                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                                                </svg>
-                                                Support
-                                            </button>
-                                            
-                                            <div class="border-t pt-2">
-                                                <button
-                                                    onclick="handleLogout()"
-                                                    class="w-full flex items-center gap-2 p-3 hover:bg-red-50 text-red-600 rounded text-left"
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                                                        <polyline points="16,17 21,12 16,7"/>
-                                                        <line x1="21" y1="12" x2="9" y2="12"/>
-                                                    </svg>
-                                                    Logout
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ` : ''}
-                                </div>
-
-                                ${showNotifications ? `
-                                    <div class="absolute top-16 right-4 bg-white rounded-lg shadow-xl border p-4 min-w-80 max-w-sm z-50 max-h-96 overflow-y-auto">
-                                        <h3 class="font-semibold text-gray-800 mb-3">Notifications</h3>
-                                        ${notifications.length > 0 ? `
-                                            <div class="space-y-3">
-                                                ${notifications.slice().reverse().map(notification => `
-                                                    <div class="p-3 border rounded-lg ${notification.isRead ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'}">
-                                                        <div class="flex items-start gap-3">
-                                                            <div class="w-8 h-8 rounded-full flex items-center justify-center ${
-                                                                notification.type === 'message' ? 'bg-blue-100' :
-                                                                notification.type === 'like' ? 'bg-pink-100' : 'bg-green-100'
-                                                            }">
-                                                                ${notification.type === 'message' ? 
-                                                                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' :
-                                                                    notification.type === 'like' ?
-                                                                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-pink-500"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' :
-                                                                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>'
-                                                                }
-                                                            </div>
-                                                            <div class="flex-1">
-                                                                <h4 class="font-medium text-gray-800 text-sm">${notification.title}</h4>
-                                                                <p class="text-gray-600 text-xs mt-1">${notification.message}</p>
-                                                                <p class="text-gray-400 text-xs mt-1">${formatTime(notification.timestamp)}</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                `).join('')}
-                                            </div>
-                                            <button
-                                                onclick="notifications.forEach(n => n.isRead = true); setNotifications(notifications); render()"
-                                                class="w-full mt-3 text-sm text-blue-600 hover:text-blue-700"
-                                            >
-                                                Mark all as read
-                                            </button>
-                                        ` : `
-                                            <p class="text-gray-500 text-sm">No notifications yet</p>
-                                        `}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderMainScreen() {
-            return `
-                <div class="min-h-screen bg-gray-50">
-                    ${renderHeader()}
-                    
-                    <div class="max-w-6xl mx-auto px-4 py-8">
-                        <div class="mb-8">
-                            <h2 class="text-3xl font-bold text-gray-800 mb-2">Your Matches</h2>
-                            <p class="text-gray-600">
-                                ${matches.length} people are waiting to meet you
-                            </p>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            ${matches.map(match => `
-                                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
-                                    <div class="relative">
-                                        <img
-                                            src="${match.profileImage}"
-                                            alt="${match.name}"
-                                            class="w-full h-48 object-cover"
-                                        />
-                                        ${match.isOnline ? `
-                                            <div class="absolute top-3 right-3 w-3 h-3 bg-green-500 rounded-full border-2 border-white online-dot"></div>
-                                        ` : ''}
-                                        ${match.unreadCount > 0 ? `
-                                            <div class="absolute top-3 left-3 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center notification-badge">
-                                                ${match.unreadCount}
-                                            </div>
-                                        ` : ''}
-                                        ${match.hasLiked ? `
-                                            <div class="absolute bottom-3 right-3 bg-pink-500 text-white rounded-full p-2">
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                                </svg>
-                                            </div>
-                                        ` : ''}
-                                    </div>
-                                    
-                                    <div class="p-4">
-                                        <h3 class="text-lg font-semibold text-gray-800 mb-1">${match.name}</h3>
-                                        <p class="text-sm text-gray-600 mb-3 flex items-center gap-1">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                                <circle cx="9" cy="7" r="4"/>
-                                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                            </svg>
-                                            ${match.age} • ${match.country}
-                                        </p>
-                                        
-                                        ${match.lastMessage ? `
-                                            <div class="bg-gray-50 rounded-lg p-3 mb-3">
-                                                <p class="text-sm text-gray-600 line-clamp-2">${match.lastMessage}</p>
-                                            </div>
-                                        ` : ''}
-                                        
-                                        <div class="flex gap-2">
-                                            <button
-                                                onclick="handleChatClick(${JSON.stringify(match).replace(/"/g, '&quot;')})"
-                                                class="flex-1 gradient-button text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                                                </svg>
-                                                ${hasCreditsOrUnlimited() ? 'Chat' : 'Unlock Chat'}
-                                            </button>
-                                            <button
-                                                onclick="handleLikeMatch('${match.id}')"
-                                                class="p-2 ${match.hasLiked ? 'gradient-button text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'} rounded-lg transition-all duration-200"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="${match.hasLiked ? 'white' : 'none'}" stroke="currentColor" stroke-width="2">
-                                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderChatScreen() {
-            return `
-                <div class="min-h-screen bg-gray-50 flex flex-col">
-                    <!-- Header -->
-                    <div class="bg-white shadow-sm border-b">
-                        <div class="max-w-md mx-auto flex items-center p-4">
-                            <button
-                                onclick="currentView = 'main'; render()"
-                                class="p-2 hover:bg-gray-100 rounded-full transition-colors mr-3"
-                            >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="19" y1="12" x2="5" y2="12"/>
-                                    <polyline points="12,19 5,12 12,5"/>
-                                </svg>
-                            </button>
-                            <div class="flex items-center flex-1">
-                                <div class="relative">
-                                    <img
-                                        src="${selectedMatch.profileImage}"
-                                        alt="${selectedMatch.name}"
-                                        class="w-10 h-10 rounded-full object-cover"
-                                    />
-                                    ${selectedMatch.isOnline ? `
-                                        <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                                    ` : ''}
-                                </div>
-                                <div class="ml-3">
-                                    <h2 class="font-semibold text-gray-800">${selectedMatch.name}</h2>
-                                    <p class="text-sm text-gray-600">
-                                        ${selectedMatch.isOnline ? 'Online' : 'Offline'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Messages -->
-                    <div class="flex-1 max-w-md mx-auto w-full p-4">
-                        ${!hasCreditsOrUnlimited() ? `
-                            <div class="flex flex-col items-center justify-center h-full text-center">
-                                <svg class="text-gray-400 mb-4" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                    <circle cx="12" cy="16" r="1"/>
-                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                </svg>
-                                <h3 class="text-lg font-semibold text-gray-800 mb-2">
-                                    Messages are locked
-                                </h3>
-                                <p class="text-gray-600 mb-6">
-                                    You need credits to send and view messages
-                                </p>
-                                <button onclick="showBuyCredits = true; render()" class="gradient-button text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-200 flex items-center gap-2">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                        <circle cx="12" cy="16" r="1"/>
-                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                    </svg>
-                                    Buy Credits
-                                </button>
-                            </div>
-                        ` : `
-                            <div class="space-y-4" id="chat-messages">
-                                ${chatMessages.map(message => `
-                                    <div class="flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}">
-                                        <div class="${message.sender === 'user' ? 'gradient-button text-white' : 'bg-white border'} px-4 py-2 rounded-2xl max-w-xs">
-                                            <p class="text-sm ${message.sender === 'user' ? 'text-white' : 'text-gray-800'}">${message.text}</p>
-                                            <p class="text-xs ${message.sender === 'user' ? 'opacity-75' : 'text-gray-500'} mt-1">${formatTime(message.timestamp)}</p>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        `}
-                    </div>
-
-                    <!-- Message Input -->
-                    ${hasCreditsOrUnlimited() ? `
-                        <div class="bg-white border-t p-4 max-w-md mx-auto w-full">
-                            <div class="flex items-center gap-3">
-                                <input
-                                    type="text"
-                                    placeholder="Type a message..."
-                                    value="${currentMessage}"
-                                    oninput="currentMessage = this.value"
-                                    onkeypress="if(event.key === 'Enter') handleSendMessage()"
-                                    class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                />
-                                <button onclick="handleSendMessage()" class="gradient-button text-white p-3 rounded-lg hover:shadow-lg transition-all duration-200">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <line x1="22" y1="2" x2="11" y2="13"/>
-                                        <polygon points="22,2 15,22 11,13 2,9 22,2"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        function renderBuyCreditsModal() {
-            if (!showBuyCredits) return '';
-
-            return `
-                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                        <div class="flex items-center justify-between p-6 border-b">
-                            <h2 class="text-xl font-bold text-gray-800">Buy Credits</h2>
-                            <button
-                                onclick="showBuyCredits = false; showPayment = false; showSuccess = false; selectedPackage = null; error = ''; transactionId = ''; render()"
-                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                            >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                    <line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="p-6">
-                            ${showSuccess ? `
-                                <div class="text-center py-8">
-                                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <svg class="text-green-600" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <polyline points="20,6 9,17 4,12"/>
-                                        </svg>
-                                    </div>
-                                    <h3 class="text-lg font-semibold text-gray-800 mb-2">
-                                        Payment Successful!
-                                    </h3>
-                                    <p class="text-gray-600">
-                                        ${selectedPackage?.isUnlimited 
-                                            ? 'Unlimited messages activated for 1 month!' 
-                                            : `${selectedPackage?.credits} credits have been added to your account`
-                                        }
-                                    </p>
-                                </div>
-                            ` : showPayment && selectedPackage ? `
-                                <div class="space-y-6">
-                                    <div class="text-center">
-                                        <h3 class="text-lg font-semibold text-gray-800 mb-2">
-                                            Complete Payment
-                                        </h3>
-                                        <div class="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-lg">
-                                            <p class="font-semibold text-gray-800">${selectedPackage.name}</p>
-                                            <p class="text-2xl font-bold text-pink-600">
-                                                ${selectedCurrency.symbol}${getLocalPrice(selectedPackage)}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                        <h4 class="font-semibold text-blue-800 mb-2">Payment Instructions</h4>
-                                        <p class="text-blue-700 text-sm mb-2">
-                                            Send <strong>${selectedCurrency.symbol}${getLocalPrice(selectedPackage)}</strong> to M-Pesa Till Number:
-                                        </p>
-                                        <div class="bg-blue-100 p-3 rounded text-center">
-                                            <p class="text-xl font-bold text-blue-800">12345678</p>
-                                        </div>
-                                    </div>
-
-                                    ${error ? `
-                                        <div class="bg-red-50 border border-red-200 rounded-lg p-3">
-                                            <p class="text-red-600 text-sm">${error}</p>
-                                        </div>
-                                    ` : ''}
-
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Transaction ID</label>
-                                            <input
-                                                type="text"
-                                                placeholder="Enter M-Pesa transaction ID"
-                                                value="${transactionId}"
-                                                oninput="transactionId = this.value"
-                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                            />
-                                            <p class="text-xs text-gray-500 mt-1">
-                                                Enter the transaction ID you received from M-Pesa
-                                            </p>
-                                        </div>
-
-                                        <div class="flex gap-3">
-                                            <button onclick="handlePayment()" class="flex-1 gradient-button text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-200">
-                                                Confirm Payment
-                                            </button>
-                                            <button onclick="showPayment = false; render()" class="bg-gray-200 text-gray-800 hover:bg-gray-300 px-6 py-3 rounded-lg font-medium transition-all duration-200">
-                                                Back
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ` : `
-                                <div class="space-y-6">
-                                    <div class="text-center">
-                                        <svg class="text-pink-500 mx-auto mb-4" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                                            <line x1="8" y1="21" x2="16" y2="21"/>
-                                            <line x1="12" y1="17" x2="12" y2="21"/>
-                                        </svg>
-                                        <h3 class="text-lg font-semibold text-gray-800 mb-2">
-                                            Choose Your Package
-                                        </h3>
-                                    </div>
-
-                                    <div class="relative">
-                                        <button
-                                            type="button"
-                                            onclick="showCurrencyDropdown = !showCurrencyDropdown; render()"
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-left flex items-center justify-between"
-                                        >
-                                            <span class="text-gray-800">
-                                                ${selectedCurrency.symbol} ${selectedCurrency.name}
-                                            </span>
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <polyline points="6,9 12,15 18,9"/>
-                                            </svg>
-                                        </button>
-                                        
-                                        ${showCurrencyDropdown ? `
-                                            <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                                ${CURRENCIES.map(currency => `
-                                                    <button
-                                                        type="button"
-                                                        onclick="handleCurrencySelect('${currency.code}')"
-                                                        class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center justify-between"
-                                                    >
-                                                        <span>${currency.symbol} ${currency.name}</span>
-                                                        <span class="text-gray-500 text-sm">${currency.code}</span>
-                                                    </button>
-                                                `).join('')}
-                                            </div>
-                                        ` : ''}
-                                    </div>
-
-                                    <div class="space-y-3">
-                                        ${CREDIT_PACKAGES.map(pkg => `
-                                            <div
-                                                onclick="handlePackageSelect(${JSON.stringify(pkg).replace(/"/g, '&quot;')})"
-                                                class="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-lg border hover:border-pink-300 transition-colors cursor-pointer"
-                                            >
-                                                <div class="flex items-center justify-between">
-                                                    <div>
-                                                        <p class="font-semibold text-gray-800">${pkg.name}</p>
-                                                        <p class="text-sm text-gray-600">
-                                                            ${pkg.isUnlimited 
-                                                                ? `Unlimited messages for ${pkg.duration} days`
-                                                                : `${pkg.credits} credits for messaging`
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                    <div class="text-right">
-                                                        <p class="font-bold text-lg text-pink-600">
-                                                            ${selectedCurrency.symbol}${getLocalPrice(pkg)}
-                                                        </p>
-                                                        <p class="text-xs text-gray-500">
-                                                            $${pkg.priceUSD} USD
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-
-                                    <button onclick="showBuyCredits = false; render()" class="w-full bg-gray-200 text-gray-800 hover:bg-gray-300 px-6 py-3 rounded-lg font-medium transition-all duration-200">
-                                        Cancel
-                                    </button>
-                                </div>
-                            `}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderProfileSettings() {
-            if (!showProfileSettings) return '';
-
-            return `
-                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                        <div class="flex items-center justify-between p-6 border-b">
-                            <h2 class="text-xl font-bold text-gray-800">Profile Settings</h2>
-                            <button
-                                onclick="showProfileSettings = false; isEditing = false; render()"
-                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                            >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                    <line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="p-6">
-                            <div class="text-center mb-6">
-                                <div class="relative inline-block">
-                                    ${editFormData.profileImage || currentUser.profileImage ? `
-                                        <img
-                                            src="${editFormData.profileImage || currentUser.profileImage}"
-                                            alt="Profile"
-                                            class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover mx-auto"
-                                        />
-                                    ` : `
-                                        <div class="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gray-200 flex items-center justify-center mx-auto">
-                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400">
-                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                                <circle cx="12" cy="7" r="4"/>
-                                            </svg>
-                                        </div>
-                                    `}
-                                    ${isEditing ? `
-                                        <label
-                                            for="profile-image-edit"
-                                            class="absolute bottom-0 right-0 p-2 bg-pink-500 rounded-full text-white cursor-pointer hover:bg-pink-600 transition-colors"
-                                        >
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                <polyline points="7,10 12,15 17,10"/>
-                                                <line x1="12" y1="15" x2="12" y2="3"/>
-                                            </svg>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onchange="handleImageUpload(event)"
-                                                class="hidden"
-                                                id="profile-image-edit"
-                                            />
-                                        </label>
-                                    ` : ''}
-                                </div>
-                            </div>
-
-                            ${isEditing ? `
-                                <div class="space-y-4">
-                                    <input
-                                        type="text"
-                                        placeholder="Full Name"
-                                        value="${editFormData.name}"
-                                        oninput="editFormData.name = this.value"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                    />
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <input
-                                            type="number"
-                                            placeholder="Age"
-                                            value="${editFormData.age}"
-                                            oninput="editFormData.age = this.value"
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                        <input
-                                            type="text"
-                                            placeholder="Height"
-                                            value="${editFormData.height}"
-                                            oninput="editFormData.height = this.value"
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                        />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        placeholder="Country"
-                                        value="${editFormData.country}"
-                                        oninput="editFormData.country = this.value"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                    />
-                                    <div class="flex gap-2">
-                                        <button onclick="handleProfileSave()" class="flex-1 gradient-button text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <polyline points="20,6 9,17 4,12"/>
-                                            </svg>
-                                            Save
-                                        </button>
-                                        <button onclick="handleProfileCancel()" class="flex-1 bg-gray-200 text-gray-800 hover:bg-gray-300 px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                                <line x1="6" y1="6" x2="18" y2="18"/>
-                                            </svg>
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            ` : `
-                                <div class="space-y-4">
-                                    <div class="text-center">
-                                        <h3 class="text-xl font-bold text-gray-800 mb-4">${currentUser.name}</h3>
-                                        <div class="space-y-2 text-gray-600">
-                                            <p><span class="font-medium">Age:</span> ${currentUser.age}</p>
-                                            <p><span class="font-medium">Height:</span> ${currentUser.height}</p>
-                                            <p><span class="font-medium">Country:</span> ${currentUser.country}</p>
-                                            <p><span class="font-medium">Email:</span> ${currentUser.email}</p>
-                                        </div>
-                                    </div>
-                                    <button onclick="isEditing = true; render()" class="w-full gradient-button text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                        </svg>
-                                        Edit Profile
-                                    </button>
-                                </div>
-                            `}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderTransactionHistory() {
-            if (!showTransactionHistory) return '';
-
-            return `
-                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                        <div class="flex items-center justify-between p-6 border-b">
-                            <h2 class="text-xl font-bold text-gray-800">Transaction History</h2>
-                            <button
-                                onclick="showTransactionHistory = false; render()"
-                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                            >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                    <line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="p-6">
-                            ${transactions.length > 0 ? `
-                                <div class="space-y-4">
-                                    ${transactions.slice().reverse().map(transaction => `
-                                        <div class="border rounded-lg p-4">
-                                            <div class="flex items-center justify-between mb-2">
-                                                <h4 class="font-semibold text-gray-800">${transaction.packageName}</h4>
-                                                <span class="text-sm px-2 py-1 bg-green-100 text-green-800 rounded-full">${transaction.status}</span>
-                                            </div>
-                                            <div class="text-sm text-gray-600">
-                                                <p>Amount: ${transaction.amount}</p>
-                                                <p>Date: ${formatDate(transaction.date)}</p>
-                                                <p>Currency: ${transaction.currency}</p>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            ` : `
-                                <div class="text-center py-8">
-                                    <svg class="text-gray-400 mx-auto mb-4" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                        <polyline points="14,2 14,8 20,8"/>
-                                        <line x1="16" y1="13" x2="8" y2="13"/>
-                                        <line x1="16" y1="17" x2="8" y2="17"/>
-                                        <polyline points="10,9 9,9 8,9"/>
-                                    </svg>
-                                    <h3 class="text-lg font-semibold text-gray-800 mb-2">No Transactions</h3>
-                                    <p class="text-gray-600">You haven't made any purchases yet</p>
-                                </div>
-                            `}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderSupport() {
-            if (!showSupport) return '';
-
-            return `
-                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                        <div class="flex items-center justify-between p-6 border-b">
-                            <h2 class="text-xl font-bold text-gray-800">Support</h2>
-                            <button
-                                onclick="showSupport = false; render()"
-                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                            >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                    <line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="p-6">
-                            <div class="space-y-6">
-                                <div class="text-center">
-                                    <svg class="text-blue-500 mx-auto mb-4" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                                    </svg>
-                                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Need Help?</h3>
-                                    <p class="text-gray-600">We're here to help you with any questions or issues</p>
-                                </div>
-
-                                <div class="space-y-4">
-                                    <div class="border rounded-lg p-4">
-                                        <h4 class="font-semibold text-gray-800 mb-2">Frequently Asked Questions</h4>
-                                        <div class="space-y-2 text-sm text-gray-600">
-                                            <p><strong>Q:</strong> How do I buy credits?</p>
-                                            <p><strong>A:</strong> Click on "Buy Credits" and follow the payment instructions.</p>
-                                            
-                                            <p><strong>Q:</strong> How do unlimited messages work?</p>
-                                            <p><strong>A:</strong> With unlimited messages, you can chat without spending credits for the duration of your subscription.</p>
-                                            
-                                            <p><strong>Q:</strong> How do I update my profile?</p>
-                                            <p><strong>A:</strong> Go to Profile Settings and click "Edit Profile".</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="border rounded-lg p-4">
-                                        <h4 class="font-semibold text-gray-800 mb-2">Contact Support</h4>
-                                        <p class="text-sm text-gray-600 mb-3">
-                                            For additional help, contact our support team:
-                                        </p>
-                                        <div class="space-y-2 text-sm">
-                                            <p><strong>Email:</strong> support@zurilove.com</p>
-                                            <p><strong>Phone:</strong> +1 (555) 123-4567</p>
-                                            <p><strong>Hours:</strong> 24/7 Support</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="border rounded-lg p-4">
-                                        <h4 class="font-semibold text-gray-800 mb-2">App Version</h4>
-                                        <p class="text-sm text-gray-600">Zuri Love v1.0.0</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderAlertModal() {
-            if (!showAlert) return '';
-
-            const alertColors = {
-                success: 'bg-green-50 border-green-200 text-green-800',
-                error: 'bg-red-50 border-red-200 text-red-800',
-                info: 'bg-blue-50 border-blue-200 text-blue-800'
+        function sendPaymentEmail(user, transaction) {
+            const templateParams = {
+                user_name: user.name,
+                user_email: user.email,
+                user_phone: user.countryCode + user.phoneNumber,
+                package_name: transaction.packageName,
+                amount_paid: transaction.amount,
+                transaction_id: 'MPESA' + Date.now(),
+                currency: transaction.currency,
             };
 
-            const alertIcons = {
-                success: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>',
-                error: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-                info: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
-            };
-
-            return `
-                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-xl shadow-xl max-w-sm w-full">
-                        <div class="p-6">
-                            <div class="flex items-center gap-3">
-                                <div class="${alertColors[alertType]} p-2 rounded-full">
-                                    ${alertIcons[alertType]}
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-gray-800 font-medium">${alertMessage}</p>
-                                </div>
-                                <button
-                                    onclick="showAlert = false; render()"
-                                    class="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <line x1="18" y1="6" x2="6" y2="18"/>
-                                        <line x1="6" y1="6" x2="18" y2="18"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            emailjs.send('service_7e51cwp', 'template_6rl4ss2', templateParams, 'LMdaXNTSTm33O5BqT')
+                .then(() => {
+                    console.log('Payment email sent successfully');
+                })
+                .catch((error) => {
+                    console.error('Failed to send payment email:', error);
+                });
         }
-
-        // Main render function
-        function render() {
-            const app = document.getElementById('app');
-            
-            let content = '';
-            
-            if (!currentUser || currentView === 'auth') {
-                content = renderAuthScreen();
-            } else if (currentView === 'main') {
-                content = renderMainScreen();
-            } else if (currentView === 'chat') {
-                content = renderChatScreen();
-            }
-            
-            // Add modals
-            content += renderBuyCreditsModal();
-            content += renderProfileSettings();
-            content += renderTransactionHistory();
-            content += renderSupport();
-            content += renderAlertModal();
-            
-            app.innerHTML = content;
-
-            // Close dropdowns when clicking outside
-            document.addEventListener('click', function(event) {
-                if (!event.target.closest('.relative')) {
-                    showCountryDropdown = false;
-                    showCurrencyDropdown = false;
-                    showUserMenu = false;
-                    showNotifications = false;
-                    render();
-                }
-            });
-
-            // Auto-scroll chat to bottom
-            if (currentView === 'chat') {
-                setTimeout(() => {
-                    const chatMessages = document.getElementById('chat-messages');
-                    if (chatMessages) {
-                        chatMessages.scrollTop = chatMessages.scrollHeight;
-                    }
-                }, 100);
-            }
-        }
-
-        // Initialize app
-        function init() {
-            currentUser = getCurrentUser();
-            if (currentUser) {
-                currentView = 'main';
-                initializeApp();
-            }
-            render();
-        }
-
-        // Start the app
-        init();
     </script>
 </body>
 </html>
