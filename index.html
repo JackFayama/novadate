@@ -8,6 +8,34 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
+        /* Hide scrollbars but keep scrolling functionality */
+        * {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* Internet Explorer 10+ */
+        }
+        *::-webkit-scrollbar {
+            display: none; /* WebKit */
+        }
+        
+        /* Force mobile layout on all devices */
+        @media (min-width: 768px) {
+            .max-w-6xl {
+                max-width: 28rem !important; /* Force mobile width */
+            }
+            .md\:grid-cols-2 {
+                grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+            }
+            .lg\:grid-cols-3 {
+                grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+            }
+            .md\:flex {
+                display: none !important;
+            }
+            .md\:hidden {
+                display: flex !important;
+            }
+        }
+        
         .gradient-bg {
             background: linear-gradient(135deg, #fce7f3 0%, #f3e8ff 50%, #e0e7ff 100%);
         }
@@ -331,7 +359,7 @@
                         <div class="hidden md:flex items-center gap-4">
                             <div class="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-full">
                                 <i data-lucide="credit-card" class="w-4 h-4"></i>
-                                <span class="font-semibold" id="creditsDisplay">5</span>
+                                <span class="font-semibold" id="creditsDisplay">0</span>
                             </div>
                             
                             <button id="buyCreditsBtn" class="flex items-center gap-2 bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-lg transition-colors">
@@ -369,7 +397,7 @@
                                 <div id="mobileMenu" class="dropdown absolute top-12 right-0 bg-white rounded-lg shadow-xl border p-2 min-w-48 z-50">
                                     <div class="flex items-center gap-2 p-3 border-b">
                                         <i data-lucide="credit-card" class="w-4 h-4 text-pink-500"></i>
-                                        <span class="font-semibold">Credits: <span id="creditsMobile">5</span></span>
+                                        <span class="font-semibold">Credits: <span id="creditsMobile">0</span></span>
                                     </div>
                                     
                                     <button id="buyCreditsMenuBtn" class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded">
@@ -843,7 +871,7 @@
                 profileImage: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
                 isOnline: true,
                 lastMessage: 'Hey there! How are you?',
-                unreadCount: 2,
+                unreadCount: 0,
                 hasLiked: false,
             },
             {
@@ -855,8 +883,8 @@
                 profileImage: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
                 isOnline: true,
                 lastMessage: 'Nice to meet you!',
-                unreadCount: 1,
-                hasLiked: true,
+                unreadCount: 0,
+                hasLiked: false,
             },
             {
                 id: '3',
@@ -867,7 +895,7 @@
                 profileImage: 'https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
                 isOnline: true,
                 lastMessage: 'Hey! How\'s your day going?',
-                unreadCount: 1,
+                unreadCount: 0,
                 hasLiked: false,
             },
             {
@@ -880,7 +908,7 @@
                 isOnline: false,
                 lastMessage: 'Nice profile!',
                 unreadCount: 0,
-                hasLiked: true,
+                hasLiked: false,
             }
         ];
 
@@ -1080,7 +1108,7 @@
                     return;
                 }
                 
-                // Create new user
+                // Create new user with 0 credits
                 const newUser = {
                     id: Date.now().toString(),
                     email: userData.email,
@@ -1096,7 +1124,7 @@
                     relationshipStatus: userData.relationshipStatus,
                     relationshipType: userData.relationshipType,
                     profileImage: document.getElementById('previewImg')?.src || '',
-                    credits: 5,
+                    credits: 0,
                     isOnline: true,
                     hasUnlimitedMessages: false,
                     unlimitedUntil: null
@@ -1202,7 +1230,7 @@
             
             updateUserDisplay();
             loadMatches();
-            generateNotifications();
+            // Don't generate notifications for new users
         }
 
         function showChatScreen(match) {
@@ -1635,34 +1663,6 @@
                 updateNotificationBadge();
                 
                 lucide.createIcons();
-            }
-        }
-
-        function generateNotifications() {
-            // Generate some sample notifications
-            if (notifications.length === 0 && matches.length > 0) {
-                const sampleNotifications = [
-                    {
-                        id: '1',
-                        type: 'message',
-                        title: 'New Message!',
-                        message: `${matches[0].name} sent you a message. Buy credits to unlock it.`,
-                        timestamp: Date.now() - 300000,
-                        isRead: false
-                    },
-                    {
-                        id: '2',
-                        type: 'like',
-                        title: 'Someone likes you!',
-                        message: `${matches[1]?.name || 'Someone'} liked your profile. Buy credits to see who.`,
-                        timestamp: Date.now() - 600000,
-                        isRead: false
-                    }
-                ];
-                
-                notifications.push(...sampleNotifications);
-                localStorage.setItem('zuriLoveNotifications', JSON.stringify(notifications));
-                updateNotificationBadge();
             }
         }
 
