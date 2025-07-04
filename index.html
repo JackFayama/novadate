@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zuri Love - Find Your Perfect Match</title>
+    <title>Zuri Love - Complete Dating Web App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
@@ -48,13 +48,21 @@
             -webkit-box-orient: vertical;
             -webkit-line-clamp: 2;
         }
+        .dropdown-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .dropdown-menu.open {
+            max-height: 400px;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
     <div id="app"></div>
 
     <script>
-        // Initialize EmailJS with your public key
+        // Initialize EmailJS
         emailjs.init('LMdaXNTSTm33O5BqT');
 
         // Global state
@@ -66,9 +74,8 @@
         let showUserMenu = false;
         let showTransactionHistory = false;
         let showSupport = false;
-        let showAlert = false;
-        let alertMessage = '';
-        let alertType = 'info';
+        let showProfileSettings = false;
+        let currentMessage = '';
         let matches = [];
         let notifications = [];
         let transactions = [];
@@ -84,7 +91,10 @@
         let error = '';
         let profileImage = '';
         let isEditing = false;
-        let uploadPending = false;
+        let showAlert = false;
+        let alertMessage = '';
+        let alertType = 'info';
+        let chatMessages = [];
 
         // Form data
         let formData = {
@@ -259,46 +269,6 @@
             },
             {
                 id: '4',
-                name: 'Anna Kowalski',
-                age: 25,
-                country: 'Poland',
-                sex: 'female',
-                profileImage: 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
-                isOnline: true,
-                lastMessage: 'Looking forward to talking!',
-                unreadCount: 3,
-                lastActivity: Date.now() - 900000,
-                hasLiked: true,
-            },
-            {
-                id: '5',
-                name: 'Maya Patel',
-                age: 27,
-                country: 'India',
-                sex: 'female',
-                profileImage: 'https://images.pexels.com/photos/1102341/pexels-photo-1102341.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
-                isOnline: true,
-                lastMessage: 'Hope you\'re having a great day!',
-                unreadCount: 1,
-                lastActivity: Date.now() - 1200000,
-                hasLiked: false,
-            },
-            {
-                id: '6',
-                name: 'Yuki Tanaka',
-                age: 23,
-                country: 'Japan',
-                sex: 'female',
-                profileImage: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
-                isOnline: false,
-                lastMessage: 'Thanks for the match!',
-                unreadCount: 0,
-                lastActivity: Date.now() - 2400000,
-                hasLiked: true,
-            },
-            // Male profiles
-            {
-                id: '7',
                 name: 'James Wilson',
                 age: 29,
                 country: 'United States',
@@ -311,7 +281,7 @@
                 hasLiked: false,
             },
             {
-                id: '8',
+                id: '5',
                 name: 'Carlos Martinez',
                 age: 31,
                 country: 'Mexico',
@@ -324,7 +294,7 @@
                 hasLiked: true,
             },
             {
-                id: '9',
+                id: '6',
                 name: 'Ahmed Hassan',
                 age: 27,
                 country: 'Egypt',
@@ -336,87 +306,71 @@
                 lastActivity: Date.now() - 1500000,
                 hasLiked: false,
             },
-            {
-                id: '10',
-                name: 'David Kim',
-                age: 26,
-                country: 'South Korea',
-                sex: 'male',
-                profileImage: 'https://images.pexels.com/photos/1043472/pexels-photo-1043472.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
-                isOnline: true,
-                lastMessage: 'Hi there! Nice to meet you',
-                unreadCount: 1,
-                lastActivity: Date.now() - 1050000,
-                hasLiked: true,
-            },
         ];
 
         // Storage functions
-        const storage = {
-            getCurrentUser: () => {
-                const user = localStorage.getItem('zuri_current_user');
-                return user ? JSON.parse(user) : null;
-            },
-            setCurrentUser: (user) => {
-                if (user) {
-                    localStorage.setItem('zuri_current_user', JSON.stringify(user));
-                } else {
-                    localStorage.removeItem('zuri_current_user');
-                }
-            },
-            getUsers: () => {
-                const users = localStorage.getItem('zuri_users');
-                return users ? JSON.parse(users) : [];
-            },
-            setUsers: (users) => {
-                localStorage.setItem('zuri_users', JSON.stringify(users));
-            },
-            getMatches: () => {
-                const matches = localStorage.getItem('zuri_matches');
-                return matches ? JSON.parse(matches) : [];
-            },
-            setMatches: (matches) => {
-                localStorage.setItem('zuri_matches', JSON.stringify(matches));
-            },
-            getNotifications: () => {
-                const notifications = localStorage.getItem('zuri_notifications');
-                return notifications ? JSON.parse(notifications) : [];
-            },
-            setNotifications: (notifications) => {
-                localStorage.setItem('zuri_notifications', JSON.stringify(notifications));
-            },
-            getTransactions: () => {
-                const transactions = localStorage.getItem('zuri_transactions');
-                return transactions ? JSON.parse(transactions) : [];
-            },
-            setTransactions: (transactions) => {
-                localStorage.setItem('zuri_transactions', JSON.stringify(transactions));
-            },
-        };
+        function getCurrentUser() {
+            const user = localStorage.getItem('zuri_current_user');
+            return user ? JSON.parse(user) : null;
+        }
+
+        function setCurrentUser(user) {
+            if (user) {
+                localStorage.setItem('zuri_current_user', JSON.stringify(user));
+            } else {
+                localStorage.removeItem('zuri_current_user');
+            }
+        }
+
+        function getUsers() {
+            const users = localStorage.getItem('zuri_users');
+            return users ? JSON.parse(users) : [];
+        }
+
+        function setUsers(users) {
+            localStorage.setItem('zuri_users', JSON.stringify(users));
+        }
+
+        function getNotifications() {
+            const notifications = localStorage.getItem('zuri_notifications');
+            return notifications ? JSON.parse(notifications) : [];
+        }
+
+        function setNotifications(notifs) {
+            localStorage.setItem('zuri_notifications', JSON.stringify(notifs));
+        }
+
+        function getTransactions() {
+            const transactions = localStorage.getItem('zuri_transactions');
+            return transactions ? JSON.parse(transactions) : [];
+        }
+
+        function setTransactions(trans) {
+            localStorage.setItem('zuri_transactions', JSON.stringify(trans));
+        }
 
         // Utility functions
         function hasCreditsOrUnlimited() {
             if (!currentUser) return false;
-            if (currentUser.hasUnlimitedMessages && currentUser.unlimitedUntil && currentUser.unlimitedUntil > Date.now()) {
+            
+            if (currentUser.hasUnlimitedMessages && 
+                currentUser.unlimitedUntil && 
+                currentUser.unlimitedUntil > Date.now()) {
                 return true;
             }
             return currentUser.credits > 0;
         }
 
-        function getLocalPrice() {
-            if (!selectedPackage) return 0;
-            return (selectedPackage.priceUSD * selectedCurrency.rate).toFixed(2);
-        }
-
-        function showAlertModal(message, type = 'info') {
-            alertMessage = message;
-            alertType = type;
-            showAlert = true;
-            render();
+        function getLocalPrice(pkg) {
+            return (pkg.priceUSD * selectedCurrency.rate).toFixed(2);
         }
 
         function formatDate(timestamp) {
-            return new Date(timestamp).toLocaleDateString() + ' ' + new Date(timestamp).toLocaleTimeString();
+            return new Date(timestamp).toLocaleDateString();
+        }
+
+        function formatTime(timestamp) {
+            return new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         }
 
         // Email functions
@@ -441,24 +395,21 @@
                     templateParams,
                     'LMdaXNTSTm33O5BqT'
                 );
-                
-                showAlertModal('Registration email sent successfully!', 'success');
             } catch (error) {
                 console.error('Failed to send registration email:', error);
-                showAlertModal('Failed to send registration email. Please try again.', 'error');
             }
         }
 
-        async function sendPaymentEmail(packageData, amount, transactionId) {
+        async function sendPaymentEmail(user, packageData, amount, transactionId, currency) {
             try {
                 const templateParams = {
-                    user_name: currentUser.name,
-                    user_email: currentUser.email,
-                    user_phone: currentUser.countryCode + currentUser.phoneNumber,
+                    user_name: user.name,
+                    user_email: user.email,
+                    user_phone: user.countryCode + user.phoneNumber,
                     package_name: packageData.name,
-                    amount_paid: `${selectedCurrency.symbol}${amount}`,
+                    amount_paid: `${currency.symbol}${amount}`,
                     transaction_id: transactionId,
-                    currency: selectedCurrency.code,
+                    currency: currency.code,
                 };
 
                 await emailjs.send(
@@ -467,49 +418,13 @@
                     templateParams,
                     'LMdaXNTSTm33O5BqT'
                 );
-                
-                showAlertModal('Payment confirmation email sent!', 'success');
             } catch (error) {
                 console.error('Failed to send payment email:', error);
-                showAlertModal('Payment processed but email failed to send.', 'warning');
             }
         }
 
         // Event handlers
-        function handleImageUpload(e) {
-            const file = e.target.files?.[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    profileImage = e.target?.result;
-                    uploadPending = true;
-                    showAlertModal('Your photo upload is under review. It will be visible once approved.', 'info');
-                    render();
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function handleCountrySelect(country) {
-            formData.country = country.name;
-            formData.countryCode = country.dialCode;
-            showCountryDropdown = false;
-            render();
-        }
-
-        function handleCurrencySelect(currency) {
-            selectedCurrency = currency;
-            showCurrencyDropdown = false;
-            render();
-        }
-
-        function handlePackageSelect(pkg) {
-            selectedPackage = pkg;
-            showPayment = true;
-            render();
-        }
-
-        async function handleSubmit(e) {
+        function handleLogin(e) {
             e.preventDefault();
             error = '';
 
@@ -526,16 +441,15 @@
                 return;
             }
 
-            const users = storage.getUsers();
+            const users = getUsers();
 
             if (isLogin) {
                 const user = users.find(u => u.email === trimmedEmail && u.password === trimmedPassword);
                 if (user) {
-                    storage.setCurrentUser(user);
                     currentUser = user;
+                    setCurrentUser(user);
                     currentView = 'main';
                     initializeApp();
-                    showAlertModal('Welcome back!', 'success');
                 } else {
                     showAlertModal('Invalid email or password', 'error');
                 }
@@ -559,99 +473,106 @@
                     lookingFor: formData.lookingFor,
                     relationshipType: formData.relationshipType,
                     sex: formData.sex,
-                    profileImage: uploadPending ? '' : profileImage,
+                    profileImage,
                     credits: 5,
                     isOnline: true,
                 };
 
                 users.push(newUser);
-                storage.setUsers(users);
-                storage.setCurrentUser(newUser);
+                setUsers(users);
+                
+                sendRegistrationEmail(newUser);
                 currentUser = newUser;
-                
-                await sendRegistrationEmail(newUser);
-                
+                setCurrentUser(newUser);
                 currentView = 'main';
                 initializeApp();
             }
             render();
         }
 
-        function handleOpenChat(match) {
-            selectedMatch = match;
-            currentView = 'chat';
-            render();
-        }
-
-        function handleSendMessage(matchId, message) {
-            if (hasCreditsOrUnlimited() && !currentUser.hasUnlimitedMessages) {
-                currentUser.credits = currentUser.credits - 1;
-                updateCurrentUser(currentUser);
-            }
-        }
-
-        function handleLikeMatch(matchId) {
-            if (!hasCreditsOrUnlimited()) {
-                showBuyCredits = true;
-                render();
-                return;
-            }
-
-            const matchIndex = matches.findIndex(m => m.id === matchId);
-            if (matchIndex !== -1) {
-                matches[matchIndex].hasLiked = !matches[matchIndex].hasLiked;
-                storage.setMatches(matches);
-                
-                if (!currentUser.hasUnlimitedMessages) {
-                    currentUser.credits = currentUser.credits - 1;
-                    updateCurrentUser(currentUser);
-                }
-                
-                render();
-            }
-        }
-
-        async function handleBuyCredits(packageId, transactionId) {
-            if (transactionId === '12345678') {
-                let updatedUser = { ...currentUser };
-                
-                if (packageId === '1') {
-                    updatedUser.credits = currentUser.credits + 10;
-                } else if (packageId === '2' || packageId === '3') {
-                    updatedUser.hasUnlimitedMessages = true;
-                    updatedUser.unlimitedUntil = Date.now() + (30 * 24 * 60 * 60 * 1000);
-                }
-                
-                // Add transaction record
-                const transaction = {
-                    id: Date.now().toString(),
-                    packageName: selectedPackage.name,
-                    amount: `${selectedCurrency.symbol}${getLocalPrice()}`,
-                    transactionId: transactionId,
-                    date: Date.now(),
-                    status: 'Completed'
+        function handleImageUpload(e) {
+            const file = e.target.files?.[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    if (currentView === 'auth') {
+                        profileImage = e.target.result;
+                    } else {
+                        editFormData.profileImage = e.target.result;
+                    }
+                    render();
                 };
-                
-                transactions.push(transaction);
-                storage.setTransactions(transactions);
-                
-                updateCurrentUser(updatedUser);
-                return true;
+                reader.readAsDataURL(file);
             }
-            return false;
+        }
+
+        function handleCountrySelect(countryName) {
+            const country = COUNTRIES.find(c => c.name === countryName);
+            if (country) {
+                formData.country = country.name;
+                formData.countryCode = country.dialCode;
+                showCountryDropdown = false;
+                render();
+            }
+        }
+
+        function handleCurrencySelect(currencyCode) {
+            const currency = CURRENCIES.find(c => c.code === currencyCode);
+            if (currency) {
+                selectedCurrency = currency;
+                showCurrencyDropdown = false;
+                render();
+            }
+        }
+
+        function handlePackageSelect(pkg) {
+            selectedPackage = pkg;
+            showPayment = true;
+            render();
         }
 
         async function handlePayment() {
             if (!transactionId.trim()) {
-                showAlertModal('Please enter transaction ID', 'error');
+                error = 'Please enter transaction ID';
+                render();
                 return;
             }
 
             error = '';
-            const success = await handleBuyCredits(selectedPackage.id, transactionId);
-            
-            if (success) {
-                await sendPaymentEmail(selectedPackage, getLocalPrice(), transactionId);
+            // Simple validation - in real app, this would verify with payment provider
+            if (transactionId.length >= 8) {
+                let updatedUser = { ...currentUser };
+                
+                if (selectedPackage.id === '1') {
+                    updatedUser.credits = currentUser.credits + 10;
+                } else if (selectedPackage.id === '2' || selectedPackage.id === '3') {
+                    updatedUser.hasUnlimitedMessages = true;
+                    updatedUser.unlimitedUntil = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 days
+                }
+                
+                currentUser = updatedUser;
+                setCurrentUser(updatedUser);
+                
+                // Update users array
+                const users = getUsers();
+                const updatedUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
+                setUsers(updatedUsers);
+
+                // Add transaction record
+                const newTransaction = {
+                    id: Date.now().toString(),
+                    packageName: selectedPackage.name,
+                    amount: `${selectedCurrency.symbol}${getLocalPrice(selectedPackage)}`,
+                    currency: selectedCurrency.code,
+                    date: Date.now(),
+                    status: 'Completed'
+                };
+                
+                transactions.push(newTransaction);
+                setTransactions(transactions);
+                
+                // Send payment email
+                await sendPaymentEmail(currentUser, selectedPackage, getLocalPrice(selectedPackage), transactionId, selectedCurrency);
                 
                 showSuccess = true;
                 transactionId = '';
@@ -662,55 +583,103 @@
                     showBuyCredits = false;
                     render();
                 }, 3000);
+                render();
             } else {
-                showAlertModal('Invalid transaction ID. Please use: 12345678', 'error');
+                error = 'Invalid transaction ID. Please check and try again.';
+                render();
             }
+        }
+
+        function handleChatClick(match) {
+            selectedMatch = match;
+            currentView = 'chat';
+            // Initialize chat messages for this match
+            chatMessages = [
+                {
+                    id: '1',
+                    text: 'Hey! Nice to meet you',
+                    sender: 'user',
+                    timestamp: Date.now() - 300000
+                },
+                {
+                    id: '2',
+                    text: match.lastMessage,
+                    sender: 'match',
+                    timestamp: Date.now() - 60000
+                }
+            ];
             render();
         }
 
-        function handleNotificationAction(notificationId) {
-            const notification = notifications.find(n => n.id === notificationId);
-            if (notification) {
-                if (hasCreditsOrUnlimited() && notification.data?.matchId) {
-                    const match = matches.find(m => m.id === notification.data.matchId);
-                    if (match) {
-                        handleOpenChat(match);
-                    }
-                } else {
-                    showBuyCredits = true;
-                }
+        function handleSendMessage() {
+            if (!currentMessage.trim() || !hasCreditsOrUnlimited()) return;
+
+            // Add message to chat
+            chatMessages.push({
+                id: Date.now().toString(),
+                text: currentMessage.trim(),
+                sender: 'user',
+                timestamp: Date.now()
+            });
+
+            // Deduct credit if not unlimited
+            if (!currentUser.hasUnlimitedMessages) {
+                currentUser.credits = currentUser.credits - 1;
+                setCurrentUser(currentUser);
                 
-                // Mark notification as read
-                const notificationIndex = notifications.findIndex(n => n.id === notificationId);
-                if (notificationIndex !== -1) {
-                    notifications[notificationIndex].isRead = true;
-                    storage.setNotifications(notifications);
-                }
+                // Update users array
+                const users = getUsers();
+                const updatedUsers = users.map(u => u.id === currentUser.id ? currentUser : u);
+                setUsers(updatedUsers);
             }
-            showNotifications = false;
+
+            currentMessage = '';
             render();
+
+            // Simulate response after 2 seconds
+            setTimeout(() => {
+                chatMessages.push({
+                    id: (Date.now() + 1).toString(),
+                    text: 'Thanks for your message! 😊',
+                    sender: 'match',
+                    timestamp: Date.now()
+                });
+                render();
+            }, 2000);
         }
 
-        function markAllNotificationsRead() {
-            notifications.forEach(n => n.isRead = true);
-            storage.setNotifications(notifications);
-            render();
-        }
+        function handleLikeMatch(matchId) {
+            if (!hasCreditsOrUnlimited()) {
+                showBuyCredits = true;
+                render();
+                return;
+            }
 
-        function updateCurrentUser(user) {
-            currentUser = user;
-            storage.setCurrentUser(user);
+            // Find the match and toggle like
+            const matchIndex = matches.findIndex(m => m.id === matchId);
+            if (matchIndex !== -1) {
+                matches[matchIndex].hasLiked = !matches[matchIndex].hasLiked;
+            }
             
-            const users = storage.getUsers();
-            const updatedUsers = users.map(u => u.id === user.id ? user : u);
-            storage.setUsers(updatedUsers);
+            // Deduct credit if not unlimited
+            if (!currentUser.hasUnlimitedMessages) {
+                currentUser.credits = currentUser.credits - 1;
+                setCurrentUser(currentUser);
+                
+                // Update users array
+                const users = getUsers();
+                const updatedUsers = users.map(u => u.id === currentUser.id ? currentUser : u);
+                setUsers(updatedUsers);
+            }
+
+            render();
         }
 
         function handleLogout() {
-            storage.setCurrentUser(null);
             currentUser = null;
+            setCurrentUser(null);
             currentView = 'auth';
-            showAlertModal('You have been logged out successfully', 'info');
+            showUserMenu = false;
             render();
         }
 
@@ -721,11 +690,18 @@
                 age: parseInt(editFormData.age),
                 height: editFormData.height,
                 country: editFormData.country,
-                profileImage: uploadPending ? currentUser.profileImage : profileImage,
+                profileImage: editFormData.profileImage || currentUser.profileImage,
             };
-            updateCurrentUser(updatedUser);
+            
+            currentUser = updatedUser;
+            setCurrentUser(updatedUser);
+            
+            // Update users array
+            const users = getUsers();
+            const updatedUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
+            setUsers(updatedUsers);
+            
             isEditing = false;
-            uploadPending = false;
             showAlertModal('Profile updated successfully!', 'success');
             render();
         }
@@ -736,18 +712,32 @@
                 age: currentUser.age.toString(),
                 height: currentUser.height,
                 country: currentUser.country,
+                profileImage: currentUser.profileImage || '',
             };
-            profileImage = currentUser.profileImage || '';
             isEditing = false;
-            uploadPending = false;
             render();
         }
 
-        // Initialize app
+        function showAlertModal(message, type = 'info') {
+            alertMessage = message;
+            alertType = type;
+            showAlert = true;
+            render();
+            
+            setTimeout(() => {
+                showAlert = false;
+                render();
+            }, 3000);
+        }
+
         function initializeApp() {
+            if (!currentUser) return;
+
+            // Filter matches based on user preferences
             const filteredMatches = FAKE_MATCHES.filter(match => match.sex === currentUser.lookingFor);
             
-            const sortedMatches = filteredMatches.sort((a, b) => {
+            // Sort matches: online first, then by last activity, then those with messages
+            matches = filteredMatches.sort((a, b) => {
                 if (a.isOnline && !b.isOnline) return -1;
                 if (!a.isOnline && b.isOnline) return 1;
                 if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
@@ -755,22 +745,17 @@
                 return b.lastActivity - a.lastActivity;
             });
 
-            matches = sortedMatches;
-            storage.setMatches(sortedMatches);
+            // Initialize notifications
+            notifications = getNotifications();
+            transactions = getTransactions();
 
-            const storedNotifications = storage.getNotifications();
-            notifications = storedNotifications;
-
-            const storedTransactions = storage.getTransactions();
-            transactions = storedTransactions;
-
-            if (sortedMatches.length > 0) {
-                // Longer intervals: 5 minutes, 8 minutes, 12 minutes, 15 minutes
-                const notificationIntervals = [300000, 480000, 720000, 900000];
+            // Only create notifications if there are matches available
+            if (matches.length > 0) {
+                const notificationIntervals = [120000, 180000, 240000, 300000]; // 2min, 3min, 4min, 5min
                 
                 notificationIntervals.forEach((interval, index) => {
                     setTimeout(() => {
-                        const randomMatch = sortedMatches[Math.floor(Math.random() * sortedMatches.length)];
+                        const randomMatch = matches[Math.floor(Math.random() * matches.length)];
                         const notificationTypes = [
                             {
                                 type: 'message',
@@ -796,18 +781,19 @@
                             data: { matchId: randomMatch.id },
                         };
                         
-                        notifications = [...notifications, newNotification];
-                        storage.setNotifications(notifications);
+                        notifications.push(newNotification);
+                        setNotifications(notifications);
                         render();
                     }, interval);
                 });
             }
 
-            // Shuffle matches every 10 minutes
+            // Shuffle matches every 5 minutes
             setInterval(() => {
                 const onlineWithMessages = matches.filter(m => m.isOnline || m.unreadCount > 0);
                 const others = matches.filter(m => !m.isOnline && m.unreadCount === 0);
                 
+                // Shuffle others array
                 for (let i = others.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [others[i], others[j]] = [others[j], others[i]];
@@ -815,11 +801,15 @@
                 
                 matches = [...onlineWithMessages, ...others];
                 render();
-            }, 600000); // 10 minutes
+            }, 300000); // 5 minutes
         }
 
         // Render functions
         function renderAuthScreen() {
+            const creditsDisplay = currentUser?.hasUnlimitedMessages && 
+                currentUser?.unlimitedUntil && 
+                currentUser?.unlimitedUntil > Date.now() ? '∞' : currentUser?.credits || 0;
+
             return `
                 <div class="min-h-screen gradient-bg flex items-center justify-center p-4">
                     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -827,7 +817,7 @@
                             <div class="text-center mb-8">
                                 <div class="flex items-center justify-center mb-4">
                                     <svg class="text-pink-500 mr-2" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                                     </svg>
                                     <h1 class="text-3xl font-bold gradient-text">Zuri Love</h1>
                                 </div>
@@ -836,14 +826,20 @@
                                 </p>
                             </div>
 
-                            <form onsubmit="handleSubmit(event)" class="space-y-4">
+                            ${error ? `
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                                    <p class="text-red-600 text-sm">${error}</p>
+                                </div>
+                            ` : ''}
+
+                            <form onsubmit="handleLogin(event)" class="space-y-4">
                                 <input
                                     type="email"
                                     placeholder="Email"
                                     value="${formData.email}"
                                     oninput="formData.email = this.value"
-                                    required
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                    required
                                 />
 
                                 <div class="relative">
@@ -852,8 +848,8 @@
                                         placeholder="Password"
                                         value="${formData.password}"
                                         oninput="formData.password = this.value"
-                                        required
                                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        required
                                     />
                                     <button
                                         type="button"
@@ -873,8 +869,8 @@
                                         placeholder="Full Name"
                                         value="${formData.name}"
                                         oninput="formData.name = this.value"
-                                        required
                                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        required
                                     />
 
                                     <div class="grid grid-cols-2 gap-4">
@@ -883,16 +879,16 @@
                                             placeholder="Age"
                                             value="${formData.age}"
                                             oninput="formData.age = this.value"
-                                            required
                                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                            required
                                         />
                                         <input
                                             type="text"
                                             placeholder="Height"
                                             value="${formData.height}"
                                             oninput="formData.height = this.value"
-                                            required
                                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                            required
                                         />
                                     </div>
 
@@ -906,7 +902,7 @@
                                                 ${formData.country || 'Select Country'}
                                             </span>
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <polyline points="6,9 12,15 18,9"></polyline>
+                                                <polyline points="6,9 12,15 18,9"/>
                                             </svg>
                                         </button>
                                         
@@ -915,7 +911,7 @@
                                                 ${COUNTRIES.map(country => `
                                                     <button
                                                         type="button"
-                                                        onclick="handleCountrySelect(${JSON.stringify(country).replace(/"/g, '&quot;')})"
+                                                        onclick="handleCountrySelect('${country.name}')"
                                                         class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center justify-between"
                                                     >
                                                         <span>${country.name}</span>
@@ -933,8 +929,8 @@
                                                 placeholder="+1"
                                                 value="${formData.countryCode}"
                                                 oninput="formData.countryCode = this.value"
-                                                required
                                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                                required
                                             />
                                         </div>
                                         <div class="flex-1">
@@ -943,8 +939,8 @@
                                                 placeholder="Phone Number"
                                                 value="${formData.phoneNumber}"
                                                 oninput="formData.phoneNumber = this.value"
-                                                required
                                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                                required
                                             />
                                         </div>
                                     </div>
@@ -952,7 +948,7 @@
                                     <select
                                         value="${formData.sex}"
                                         onchange="formData.sex = this.value"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none"
                                         required
                                     >
                                         <option value="">Select Your Sex</option>
@@ -963,7 +959,7 @@
                                     <select
                                         value="${formData.lookingFor}"
                                         onchange="formData.lookingFor = this.value"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none"
                                         required
                                     >
                                         <option value="">Looking For</option>
@@ -974,7 +970,7 @@
                                     <select
                                         value="${formData.relationshipStatus}"
                                         onchange="formData.relationshipStatus = this.value"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none"
                                         required
                                     >
                                         <option value="">Relationship Status</option>
@@ -987,7 +983,7 @@
                                     <select
                                         value="${formData.relationshipType}"
                                         onchange="formData.relationshipType = this.value"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none"
                                         required
                                     >
                                         <option value="">Relationship Type</option>
@@ -1015,19 +1011,18 @@
                                             ` : `
                                                 <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                    <polyline points="17,8 12,3 7,8"/>
-                                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                                    <polyline points="7,10 12,15 17,10"/>
+                                                    <line x1="12" y1="15" x2="12" y2="3"/>
                                                 </svg>
                                             `}
                                             <p class="text-sm text-gray-600">
                                                 ${profileImage ? 'Change photo' : 'Upload profile photo'}
                                             </p>
-                                            ${uploadPending ? '<p class="text-xs text-orange-600 mt-1">Upload under review</p>' : ''}
                                         </label>
                                     </div>
                                 ` : ''}
 
-                                <button type="submit" class="w-full gradient-button text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl">
+                                <button type="submit" class="w-full gradient-button text-white font-medium py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-200">
                                     ${isLogin ? 'Sign In' : 'Create Account'}
                                 </button>
                             </form>
@@ -1036,7 +1031,7 @@
                                 <p class="text-gray-600">
                                     ${isLogin ? "Don't have an account?" : "Already have an account?"}
                                     <button
-                                        onclick="isLogin = !isLogin; render()"
+                                        onclick="isLogin = !isLogin; error = ''; render()"
                                         class="text-pink-500 hover:text-pink-600 ml-1 font-medium"
                                     >
                                         ${isLogin ? 'Sign Up' : 'Sign In'}
@@ -1049,41 +1044,43 @@
             `;
         }
 
-        function renderMainScreen() {
+        function renderHeader() {
+            const creditsDisplay = currentUser.hasUnlimitedMessages && 
+                currentUser.unlimitedUntil && 
+                currentUser.unlimitedUntil > Date.now() ? '∞' : currentUser.credits;
+
             const unreadNotifications = notifications.filter(n => !n.isRead).length;
-            
+
             return `
-                <div class="min-h-screen bg-gray-50">
-                    <!-- Header -->
-                    <div class="bg-white shadow-sm sticky top-0 z-10">
-                        <div class="max-w-6xl mx-auto px-4 py-4">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <svg class="text-pink-500 mr-2" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                <div class="bg-white shadow-sm sticky top-0 z-40">
+                    <div class="max-w-6xl mx-auto px-4 py-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <svg class="text-pink-500 mr-2" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                </svg>
+                                <h1 class="text-2xl font-bold gradient-text whitespace-nowrap">Zuri Love</h1>
+                            </div>
+                            
+                            <div class="flex items-center gap-3">
+                                <button
+                                    onclick="showNotifications = !showNotifications; showUserMenu = false; render()"
+                                    class="relative p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors"
+                                >
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                                     </svg>
-                                    <h1 class="text-2xl font-bold gradient-text whitespace-nowrap">Zuri Love</h1>
-                                </div>
+                                    ${unreadNotifications > 0 ? `
+                                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-badge">
+                                            ${unreadNotifications}
+                                        </span>
+                                    ` : ''}
+                                </button>
                                 
-                                <div class="flex items-center gap-4">
+                                <div class="relative">
                                     <button
-                                        onclick="showNotifications = true; render()"
-                                        class="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors relative"
-                                        title="Notifications"
-                                    >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                                        </svg>
-                                        ${unreadNotifications > 0 ? `
-                                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-badge">
-                                                ${unreadNotifications}
-                                            </span>
-                                        ` : ''}
-                                    </button>
-                                    
-                                    <button
-                                        onclick="showUserMenu = !showUserMenu; render()"
+                                        onclick="showUserMenu = !showUserMenu; showNotifications = false; render()"
                                         class="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full transition-colors relative"
                                     >
                                         ${currentUser.profileImage ? `
@@ -1100,71 +1097,72 @@
                                         `}
                                     </button>
 
-                                    <!-- User Menu -->
                                     ${showUserMenu ? `
-                                        <div class="absolute top-16 right-4 bg-white rounded-lg shadow-xl border p-2 min-w-48 z-50">
+                                        <div class="absolute top-12 right-0 bg-white rounded-lg shadow-xl border p-2 min-w-48 z-50">
                                             <div class="flex items-center gap-2 p-3 border-b">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-pink-500">
-                                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                                                    <line x1="1" y1="10" x2="23" y2="10"/>
+                                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                                    <line x1="8" y1="21" x2="16" y2="21"/>
+                                                    <line x1="12" y1="17" x2="12" y2="21"/>
                                                 </svg>
                                                 <span class="font-semibold">
-                                                    Credits: ${currentUser.hasUnlimitedMessages && currentUser.unlimitedUntil && currentUser.unlimitedUntil > Date.now() 
-                                                        ? 'Unlimited' 
-                                                        : currentUser.credits
-                                                    }
+                                                    Credits: ${creditsDisplay === '∞' ? 'Unlimited' : creditsDisplay}
                                                 </span>
                                             </div>
                                             
                                             <button
                                                 onclick="showBuyCredits = true; showUserMenu = false; render()"
-                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
+                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded text-left"
                                             >
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                                                    <line x1="1" y1="10" x2="23" y2="10"/>
+                                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                                    <line x1="8" y1="21" x2="16" y2="21"/>
+                                                    <line x1="12" y1="17" x2="12" y2="21"/>
                                                 </svg>
                                                 Buy Credits
                                             </button>
                                             
                                             <button
-                                                onclick="currentView = 'profile'; showUserMenu = false; render()"
-                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
+                                                onclick="showProfileSettings = true; showUserMenu = false; editFormData = { name: currentUser.name, age: currentUser.age.toString(), height: currentUser.height, country: currentUser.country, profileImage: currentUser.profileImage || '' }; render()"
+                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded text-left"
                                             >
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <circle cx="12" cy="12" r="3"/>
-                                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                                                 </svg>
                                                 Profile Settings
                                             </button>
-                                            
+
                                             <button
                                                 onclick="showTransactionHistory = true; showUserMenu = false; render()"
-                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
+                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded text-left"
                                             >
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <polyline points="1,4 1,10 7,10"/>
-                                                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                    <polyline points="14,2 14,8 20,8"/>
+                                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                                    <polyline points="10,9 9,9 8,9"/>
                                                 </svg>
                                                 Transaction History
                                             </button>
-                                            
+
                                             <button
                                                 onclick="showSupport = true; showUserMenu = false; render()"
-                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
+                                                class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded text-left"
                                             >
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <circle cx="12" cy="12" r="10"/>
-                                                    <path d="M9,9h0a3,3,0,0,1,6,0c0,2-3,3-3,3"/>
-                                                    <path d="M12 17h.01"/>
+                                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
                                                 </svg>
                                                 Support
                                             </button>
                                             
                                             <div class="border-t pt-2">
                                                 <button
-                                                    onclick="handleLogout(); showUserMenu = false;"
-                                                    class="w-full flex items-center gap-2 p-3 hover:bg-red-50 text-red-600 rounded"
+                                                    onclick="handleLogout()"
+                                                    class="w-full flex items-center gap-2 p-3 hover:bg-red-50 text-red-600 rounded text-left"
                                                 >
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -1177,11 +1175,58 @@
                                         </div>
                                     ` : ''}
                                 </div>
+
+                                ${showNotifications ? `
+                                    <div class="absolute top-16 right-4 bg-white rounded-lg shadow-xl border p-4 min-w-80 max-w-sm z-50 max-h-96 overflow-y-auto">
+                                        <h3 class="font-semibold text-gray-800 mb-3">Notifications</h3>
+                                        ${notifications.length > 0 ? `
+                                            <div class="space-y-3">
+                                                ${notifications.slice().reverse().map(notification => `
+                                                    <div class="p-3 border rounded-lg ${notification.isRead ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'}">
+                                                        <div class="flex items-start gap-3">
+                                                            <div class="w-8 h-8 rounded-full flex items-center justify-center ${
+                                                                notification.type === 'message' ? 'bg-blue-100' :
+                                                                notification.type === 'like' ? 'bg-pink-100' : 'bg-green-100'
+                                                            }">
+                                                                ${notification.type === 'message' ? 
+                                                                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' :
+                                                                    notification.type === 'like' ?
+                                                                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-pink-500"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' :
+                                                                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>'
+                                                                }
+                                                            </div>
+                                                            <div class="flex-1">
+                                                                <h4 class="font-medium text-gray-800 text-sm">${notification.title}</h4>
+                                                                <p class="text-gray-600 text-xs mt-1">${notification.message}</p>
+                                                                <p class="text-gray-400 text-xs mt-1">${formatTime(notification.timestamp)}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                            <button
+                                                onclick="notifications.forEach(n => n.isRead = true); setNotifications(notifications); render()"
+                                                class="w-full mt-3 text-sm text-blue-600 hover:text-blue-700"
+                                            >
+                                                Mark all as read
+                                            </button>
+                                        ` : `
+                                            <p class="text-gray-500 text-sm">No notifications yet</p>
+                                        `}
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
+                </div>
+            `;
+        }
 
-                    <!-- Main Content -->
+        function renderMainScreen() {
+            return `
+                <div class="min-h-screen bg-gray-50">
+                    ${renderHeader()}
+                    
                     <div class="max-w-6xl mx-auto px-4 py-8">
                         <div class="mb-8">
                             <h2 class="text-3xl font-bold text-gray-800 mb-2">Your Matches</h2>
@@ -1203,14 +1248,14 @@
                                             <div class="absolute top-3 right-3 w-3 h-3 bg-green-500 rounded-full border-2 border-white online-dot"></div>
                                         ` : ''}
                                         ${match.unreadCount > 0 ? `
-                                            <div class="absolute top-3 left-3 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
+                                            <div class="absolute top-3 left-3 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center notification-badge">
                                                 ${match.unreadCount}
                                             </div>
                                         ` : ''}
                                         ${match.hasLiked ? `
                                             <div class="absolute bottom-3 right-3 bg-pink-500 text-white rounded-full p-2">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                                                 </svg>
                                             </div>
                                         ` : ''}
@@ -1236,29 +1281,20 @@
                                         
                                         <div class="flex gap-2">
                                             <button
-                                                onclick="handleOpenChat(${JSON.stringify(match).replace(/"/g, '&quot;')})"
-                                                class="flex-1 gradient-button text-white py-2 px-4 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                                                onclick="handleChatClick(${JSON.stringify(match).replace(/"/g, '&quot;')})"
+                                                class="flex-1 gradient-button text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
                                             >
-                                                ${hasCreditsOrUnlimited() ? `
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                                                    </svg>
-                                                    Chat
-                                                ` : `
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                                        <circle cx="12" cy="16" r="1"/>
-                                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                                    </svg>
-                                                    Unlock Chat
-                                                `}
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                                </svg>
+                                                ${hasCreditsOrUnlimited() ? 'Chat' : 'Unlock Chat'}
                                             </button>
                                             <button
                                                 onclick="handleLikeMatch('${match.id}')"
-                                                class="p-2 ${match.hasLiked ? 'bg-pink-500' : 'bg-gray-200'} ${match.hasLiked ? 'text-white' : 'text-gray-600'} rounded-lg hover:opacity-80 transition-all"
+                                                class="p-2 ${match.hasLiked ? 'gradient-button text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'} rounded-lg transition-all duration-200"
                                             >
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="${match.hasLiked ? 'white' : 'none'}" stroke="currentColor" stroke-width="2">
-                                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                                                 </svg>
                                             </button>
                                         </div>
@@ -1267,14 +1303,6 @@
                             `).join('')}
                         </div>
                     </div>
-
-                    <!-- Overlay for mobile menu -->
-                    ${showUserMenu ? `
-                        <div 
-                            class="fixed inset-0 bg-black bg-opacity-25 z-40"
-                            onclick="showUserMenu = false; render()"
-                        ></div>
-                    ` : ''}
                 </div>
             `;
         }
@@ -1290,7 +1318,8 @@
                                 class="p-2 hover:bg-gray-100 rounded-full transition-colors mr-3"
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="15,18 9,12 15,6"/>
+                                    <line x1="19" y1="12" x2="5" y2="12"/>
+                                    <polyline points="12,19 5,12 12,5"/>
                                 </svg>
                             </button>
                             <div class="flex items-center flex-1">
@@ -1318,7 +1347,7 @@
                     <div class="flex-1 max-w-md mx-auto w-full p-4">
                         ${!hasCreditsOrUnlimited() ? `
                             <div class="flex flex-col items-center justify-center h-full text-center">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400 mb-4">
+                                <svg class="text-gray-400 mb-4" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                                     <circle cx="12" cy="16" r="1"/>
                                     <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
@@ -1329,31 +1358,25 @@
                                 <p class="text-gray-600 mb-6">
                                     You need credits to send and view messages
                                 </p>
-                                <button
-                                    onclick="showBuyCredits = true; render()"
-                                    class="gradient-button text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
-                                >
+                                <button onclick="showBuyCredits = true; render()" class="gradient-button text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-200 flex items-center gap-2">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                                        <line x1="1" y1="10" x2="23" y2="10"/>
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                        <circle cx="12" cy="16" r="1"/>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                                     </svg>
                                     Buy Credits
                                 </button>
                             </div>
                         ` : `
-                            <div class="space-y-4">
-                                <div class="flex justify-end">
-                                    <div class="gradient-button text-white px-4 py-2 rounded-2xl max-w-xs">
-                                        <p class="text-sm">Hey! Nice to meet you</p>
-                                        <p class="text-xs opacity-75 mt-1">12:34 PM</p>
+                            <div class="space-y-4" id="chat-messages">
+                                ${chatMessages.map(message => `
+                                    <div class="flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}">
+                                        <div class="${message.sender === 'user' ? 'gradient-button text-white' : 'bg-white border'} px-4 py-2 rounded-2xl max-w-xs">
+                                            <p class="text-sm ${message.sender === 'user' ? 'text-white' : 'text-gray-800'}">${message.text}</p>
+                                            <p class="text-xs ${message.sender === 'user' ? 'opacity-75' : 'text-gray-500'} mt-1">${formatTime(message.timestamp)}</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="flex justify-start">
-                                    <div class="bg-white border px-4 py-2 rounded-2xl max-w-xs">
-                                        <p class="text-sm text-gray-800">${selectedMatch.lastMessage}</p>
-                                        <p class="text-xs text-gray-500 mt-1">12:35 PM</p>
-                                    </div>
-                                </div>
+                                `).join('')}
                             </div>
                         `}
                     </div>
@@ -1365,12 +1388,12 @@
                                 <input
                                     type="text"
                                     placeholder="Type a message..."
-                                    class="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                    value="${currentMessage}"
+                                    oninput="currentMessage = this.value"
+                                    onkeypress="if(event.key === 'Enter') handleSendMessage()"
+                                    class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
                                 />
-                                <button
-                                    onclick="handleSendMessage('${selectedMatch.id}', 'message')"
-                                    class="p-2 gradient-button text-white rounded-full hover:opacity-90 transition-all"
-                                >
+                                <button onclick="handleSendMessage()" class="gradient-button text-white p-3 rounded-lg hover:shadow-lg transition-all duration-200">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <line x1="22" y1="2" x2="11" y2="13"/>
                                         <polygon points="22,2 15,22 11,13 2,9 22,2"/>
@@ -1379,333 +1402,6 @@
                             </div>
                         </div>
                     ` : ''}
-                </div>
-            `;
-        }
-
-        function renderProfileScreen() {
-            return `
-                <div class="min-h-screen gradient-bg p-4">
-                    <div class="max-w-md mx-auto">
-                        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
-                            <div class="relative h-48 gradient-button">
-                                <button
-                                    onclick="currentView = 'main'; render()"
-                                    class="absolute top-4 left-4 p-2 bg-white bg-opacity-20 rounded-full text-white hover:bg-opacity-30 transition-all"
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <line x1="18" y1="6" x2="6" y2="18"/>
-                                        <line x1="6" y1="6" x2="18" y2="18"/>
-                                    </svg>
-                                </button>
-                                <button
-                                    onclick="isEditing = !isEditing; if (isEditing) { editFormData = { name: currentUser.name, age: currentUser.age.toString(), height: currentUser.height, country: currentUser.country }; profileImage = currentUser.profileImage || ''; } render()"
-                                    class="absolute top-4 right-4 p-2 bg-white bg-opacity-20 rounded-full text-white hover:bg-opacity-30 transition-all"
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <div class="relative px-6 pb-6">
-                                <div class="absolute -top-16 left-1/2 transform -translate-x-1/2">
-                                    <div class="relative">
-                                        ${currentUser.profileImage || profileImage ? `
-                                            <img
-                                                src="${profileImage || currentUser.profileImage}"
-                                                alt="Profile"
-                                                class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover"
-                                            />
-                                        ` : `
-                                            <div class="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gray-200 flex items-center justify-center">
-                                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400">
-                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                                    <circle cx="12" cy="7" r="4"/>
-                                                </svg>
-                                            </div>
-                                        `}
-                                        ${isEditing ? `
-                                            <label
-                                                for="profile-image-edit"
-                                                class="absolute bottom-0 right-0 p-2 bg-pink-500 rounded-full text-white cursor-pointer hover:bg-pink-600 transition-colors"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                                    <polyline points="17,8 12,3 7,8"/>
-                                                    <line x1="12" y1="3" x2="12" y2="15"/>
-                                                </svg>
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onchange="handleImageUpload(event)"
-                                                    class="hidden"
-                                                    id="profile-image-edit"
-                                                />
-                                            </label>
-                                        ` : ''}
-                                        ${uploadPending ? '<div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white text-xs px-2 py-1 rounded">Under Review</div>' : ''}
-                                    </div>
-                                </div>
-
-                                <div class="pt-20 text-center">
-                                    ${isEditing ? `
-                                        <div class="space-y-4">
-                                            <input
-                                                type="text"
-                                                placeholder="Full Name"
-                                                value="${editFormData.name}"
-                                                oninput="editFormData.name = this.value"
-                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                            />
-                                            <div class="grid grid-cols-2 gap-4">
-                                                <input
-                                                    type="number"
-                                                    placeholder="Age"
-                                                    value="${editFormData.age}"
-                                                    oninput="editFormData.age = this.value"
-                                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                                />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Height"
-                                                    value="${editFormData.height}"
-                                                    oninput="editFormData.height = this.value"
-                                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                                />
-                                            </div>
-                                            <input
-                                                type="text"
-                                                placeholder="Country"
-                                                value="${editFormData.country}"
-                                                oninput="editFormData.country = this.value"
-                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-                                            />
-                                            <div class="flex gap-2">
-                                                <button
-                                                    onclick="handleProfileSave()"
-                                                    class="flex-1 gradient-button text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <polyline points="20,6 9,17 4,12"/>
-                                                    </svg>
-                                                    Save
-                                                </button>
-                                                <button
-                                                    onclick="handleProfileCancel()"
-                                                    class="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium transition-all duration-200 hover:bg-gray-300 flex items-center justify-center gap-2"
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <line x1="18" y1="6" x2="6" y2="18"/>
-                                                        <line x1="6" y1="6" x2="18" y2="18"/>
-                                                    </svg>
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ` : `
-                                        <div>
-                                            <h2 class="text-2xl font-bold text-gray-800 mb-2">${currentUser.name}</h2>
-                                            <div class="space-y-2 text-gray-600">
-                                                <p><span class="font-medium">Age:</span> ${currentUser.age}</p>
-                                                <p><span class="font-medium">Height:</span> ${currentUser.height}</p>
-                                                <p><span class="font-medium">Country:</span> ${currentUser.country}</p>
-                                                <p><span class="font-medium">Email:</span> ${currentUser.email}</p>
-                                            </div>
-                                        </div>
-                                    `}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderNotificationsModal() {
-            if (!showNotifications) return '';
-
-            return `
-                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                        <div class="flex items-center justify-between p-6 border-b">
-                            <h2 class="text-xl font-bold text-gray-800">Notifications</h2>
-                            <div class="flex items-center gap-2">
-                                <button
-                                    onclick="markAllNotificationsRead()"
-                                    class="text-sm text-pink-500 hover:text-pink-600"
-                                >
-                                    Mark all read
-                                </button>
-                                <button
-                                    onclick="showNotifications = false; render()"
-                                    class="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <line x1="18" y1="6" x2="6" y2="18"/>
-                                        <line x1="6" y1="6" x2="18" y2="18"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="p-6">
-                            ${notifications.length === 0 ? `
-                                <div class="text-center py-8">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400 mx-auto mb-4">
-                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                                    </svg>
-                                    <p class="text-gray-600">No notifications yet</p>
-                                </div>
-                            ` : `
-                                <div class="space-y-3">
-                                    ${notifications.slice().reverse().map(notification => `
-                                        <div class="p-4 border rounded-lg ${notification.isRead ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'} cursor-pointer hover:bg-gray-100 transition-colors"
-                                             onclick="handleNotificationAction('${notification.id}')">
-                                            <div class="flex items-start gap-3">
-                                                <div class="w-8 h-8 rounded-full flex items-center justify-center ${notification.type === 'message' ? 'bg-blue-100' : notification.type === 'like' ? 'bg-pink-100' : 'bg-green-100'}">
-                                                    ${notification.type === 'message' ? `
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-600">
-                                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                                                        </svg>
-                                                    ` : notification.type === 'like' ? `
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="text-pink-600">
-                                                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                                                        </svg>
-                                                    ` : `
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-600">
-                                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                                                            <line x1="1" y1="10" x2="23" y2="10"/>
-                                                        </svg>
-                                                    `}
-                                                </div>
-                                                <div class="flex-1">
-                                                    <h4 class="font-semibold text-gray-800 text-sm">${notification.title}</h4>
-                                                    <p class="text-gray-600 text-sm mt-1">${notification.message}</p>
-                                                    <p class="text-gray-400 text-xs mt-2">${formatDate(notification.timestamp)}</p>
-                                                </div>
-                                                ${!notification.isRead ? '<div class="w-2 h-2 bg-blue-500 rounded-full"></div>' : ''}
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            `}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderTransactionHistoryModal() {
-            if (!showTransactionHistory) return '';
-
-            return `
-                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                        <div class="flex items-center justify-between p-6 border-b">
-                            <h2 class="text-xl font-bold text-gray-800">Transaction History</h2>
-                            <button
-                                onclick="showTransactionHistory = false; render()"
-                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                            >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                    <line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="p-6">
-                            ${transactions.length === 0 ? `
-                                <div class="text-center py-8">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400 mx-auto mb-4">
-                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                                        <line x1="1" y1="10" x2="23" y2="10"/>
-                                    </svg>
-                                    <p class="text-gray-600">No transactions yet</p>
-                                </div>
-                            ` : `
-                                <div class="space-y-3">
-                                    ${transactions.slice().reverse().map(transaction => `
-                                        <div class="p-4 border rounded-lg bg-gray-50">
-                                            <div class="flex items-center justify-between mb-2">
-                                                <h4 class="font-semibold text-gray-800 text-sm">${transaction.packageName}</h4>
-                                                <span class="text-green-600 font-semibold">${transaction.amount}</span>
-                                            </div>
-                                            <div class="text-xs text-gray-600 space-y-1">
-                                                <p>Transaction ID: ${transaction.transactionId}</p>
-                                                <p>Date: ${formatDate(transaction.date)}</p>
-                                                <p>Status: <span class="text-green-600">${transaction.status}</span></p>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            `}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderSupportModal() {
-            if (!showSupport) return '';
-
-            return `
-                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                        <div class="flex items-center justify-between p-6 border-b">
-                            <h2 class="text-xl font-bold text-gray-800">Support</h2>
-                            <button
-                                onclick="showSupport = false; render()"
-                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                            >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                    <line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="p-6">
-                            <div class="space-y-4">
-                                <div class="text-center mb-6">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-pink-500 mx-auto mb-4">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <path d="M9,9h0a3,3,0,0,1,6,0c0,2-3,3-3,3"/>
-                                        <path d="M12 17h.01"/>
-                                    </svg>
-                                    <h3 class="text-lg font-semibold text-gray-800">How can we help?</h3>
-                                </div>
-
-                                <div class="space-y-3">
-                                    <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                                        <h4 class="font-semibold text-gray-800">Payment Issues</h4>
-                                        <p class="text-sm text-gray-600 mt-1">Having trouble with payments or credits?</p>
-                                    </div>
-                                    
-                                    <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                                        <h4 class="font-semibold text-gray-800">Account Problems</h4>
-                                        <p class="text-sm text-gray-600 mt-1">Issues with your profile or account settings?</p>
-                                    </div>
-                                    
-                                    <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                                        <h4 class="font-semibold text-gray-800">Technical Support</h4>
-                                        <p class="text-sm text-gray-600 mt-1">App not working properly?</p>
-                                    </div>
-                                    
-                                    <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                                        <h4 class="font-semibold text-gray-800">Report User</h4>
-                                        <p class="text-sm text-gray-600 mt-1">Report inappropriate behavior</p>
-                                    </div>
-                                </div>
-
-                                <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                                    <h4 class="font-semibold text-blue-800 mb-2">Contact Us</h4>
-                                    <p class="text-sm text-blue-700 mb-2">Email: support@zurilove.com</p>
-                                    <p class="text-sm text-blue-700">Phone: +1 (555) 123-4567</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             `;
         }
@@ -1732,7 +1428,7 @@
                             ${showSuccess ? `
                                 <div class="text-center py-8">
                                     <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-600">
+                                        <svg class="text-green-600" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <polyline points="20,6 9,17 4,12"/>
                                         </svg>
                                     </div>
@@ -1755,7 +1451,7 @@
                                         <div class="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-lg">
                                             <p class="font-semibold text-gray-800">${selectedPackage.name}</p>
                                             <p class="text-2xl font-bold text-pink-600">
-                                                ${selectedCurrency.symbol}${getLocalPrice()}
+                                                ${selectedCurrency.symbol}${getLocalPrice(selectedPackage)}
                                             </p>
                                         </div>
                                     </div>
@@ -1763,41 +1459,39 @@
                                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                         <h4 class="font-semibold text-blue-800 mb-2">Payment Instructions</h4>
                                         <p class="text-blue-700 text-sm mb-2">
-                                            Send <strong>${selectedCurrency.symbol}${getLocalPrice()}</strong> to M-Pesa Till Number:
+                                            Send <strong>${selectedCurrency.symbol}${getLocalPrice(selectedPackage)}</strong> to M-Pesa Till Number:
                                         </p>
                                         <div class="bg-blue-100 p-3 rounded text-center">
                                             <p class="text-xl font-bold text-blue-800">12345678</p>
                                         </div>
                                     </div>
 
+                                    ${error ? `
+                                        <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                                            <p class="text-red-600 text-sm">${error}</p>
+                                        </div>
+                                    ` : ''}
+
                                     <div class="space-y-4">
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                Transaction ID
-                                            </label>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Transaction ID</label>
                                             <input
                                                 type="text"
-                                                placeholder="Enter: 12345678"
+                                                placeholder="Enter M-Pesa transaction ID"
                                                 value="${transactionId}"
                                                 oninput="transactionId = this.value"
                                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
                                             />
                                             <p class="text-xs text-gray-500 mt-1">
-                                                Use transaction ID: 12345678 for testing
+                                                Enter the transaction ID you received from M-Pesa
                                             </p>
                                         </div>
 
                                         <div class="flex gap-3">
-                                            <button
-                                                onclick="handlePayment()"
-                                                class="flex-1 gradient-button text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-                                            >
+                                            <button onclick="handlePayment()" class="flex-1 gradient-button text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-200">
                                                 Confirm Payment
                                             </button>
-                                            <button
-                                                onclick="showPayment = false; render()"
-                                                class="bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium transition-all duration-200 hover:bg-gray-300"
-                                            >
+                                            <button onclick="showPayment = false; render()" class="bg-gray-200 text-gray-800 hover:bg-gray-300 px-6 py-3 rounded-lg font-medium transition-all duration-200">
                                                 Back
                                             </button>
                                         </div>
@@ -1806,9 +1500,10 @@
                             ` : `
                                 <div class="space-y-6">
                                     <div class="text-center">
-                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-pink-500 mx-auto mb-4">
-                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                                            <line x1="1" y1="10" x2="23" y2="10"/>
+                                        <svg class="text-pink-500 mx-auto mb-4" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                            <line x1="8" y1="21" x2="16" y2="21"/>
+                                            <line x1="12" y1="17" x2="12" y2="21"/>
                                         </svg>
                                         <h3 class="text-lg font-semibold text-gray-800 mb-2">
                                             Choose Your Package
@@ -1816,14 +1511,14 @@
                                     </div>
 
                                     <div class="relative">
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                                            Select Currency
-                                        </label>
                                         <button
+                                            type="button"
                                             onclick="showCurrencyDropdown = !showCurrencyDropdown; render()"
                                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-left flex items-center justify-between"
                                         >
-                                            <span>${selectedCurrency.symbol} ${selectedCurrency.name}</span>
+                                            <span class="text-gray-800">
+                                                ${selectedCurrency.symbol} ${selectedCurrency.name}
+                                            </span>
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <polyline points="6,9 12,15 18,9"/>
                                             </svg>
@@ -1833,7 +1528,8 @@
                                             <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                                                 ${CURRENCIES.map(currency => `
                                                     <button
-                                                        onclick="handleCurrencySelect(${JSON.stringify(currency).replace(/"/g, '&quot;')})"
+                                                        type="button"
+                                                        onclick="handleCurrencySelect('${currency.code}')"
                                                         class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center justify-between"
                                                     >
                                                         <span>${currency.symbol} ${currency.name}</span>
@@ -1862,7 +1558,7 @@
                                                     </div>
                                                     <div class="text-right">
                                                         <p class="font-bold text-lg text-pink-600">
-                                                            ${selectedCurrency.symbol}${(pkg.priceUSD * selectedCurrency.rate).toFixed(2)}
+                                                            ${selectedCurrency.symbol}${getLocalPrice(pkg)}
                                                         </p>
                                                         <p class="text-xs text-gray-500">
                                                             $${pkg.priceUSD} USD
@@ -1873,14 +1569,265 @@
                                         `).join('')}
                                     </div>
 
-                                    <button
-                                        onclick="showBuyCredits = false; render()"
-                                        class="w-full bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium transition-all duration-200 hover:bg-gray-300"
-                                    >
+                                    <button onclick="showBuyCredits = false; render()" class="w-full bg-gray-200 text-gray-800 hover:bg-gray-300 px-6 py-3 rounded-lg font-medium transition-all duration-200">
                                         Cancel
                                     </button>
                                 </div>
                             `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderProfileSettings() {
+            if (!showProfileSettings) return '';
+
+            return `
+                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between p-6 border-b">
+                            <h2 class="text-xl font-bold text-gray-800">Profile Settings</h2>
+                            <button
+                                onclick="showProfileSettings = false; isEditing = false; render()"
+                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="p-6">
+                            <div class="text-center mb-6">
+                                <div class="relative inline-block">
+                                    ${editFormData.profileImage || currentUser.profileImage ? `
+                                        <img
+                                            src="${editFormData.profileImage || currentUser.profileImage}"
+                                            alt="Profile"
+                                            class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover mx-auto"
+                                        />
+                                    ` : `
+                                        <div class="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gray-200 flex items-center justify-center mx-auto">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400">
+                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                                <circle cx="12" cy="7" r="4"/>
+                                            </svg>
+                                        </div>
+                                    `}
+                                    ${isEditing ? `
+                                        <label
+                                            for="profile-image-edit"
+                                            class="absolute bottom-0 right-0 p-2 bg-pink-500 rounded-full text-white cursor-pointer hover:bg-pink-600 transition-colors"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                <polyline points="7,10 12,15 17,10"/>
+                                                <line x1="12" y1="15" x2="12" y2="3"/>
+                                            </svg>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onchange="handleImageUpload(event)"
+                                                class="hidden"
+                                                id="profile-image-edit"
+                                            />
+                                        </label>
+                                    ` : ''}
+                                </div>
+                            </div>
+
+                            ${isEditing ? `
+                                <div class="space-y-4">
+                                    <input
+                                        type="text"
+                                        placeholder="Full Name"
+                                        value="${editFormData.name}"
+                                        oninput="editFormData.name = this.value"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                    />
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <input
+                                            type="number"
+                                            placeholder="Age"
+                                            value="${editFormData.age}"
+                                            oninput="editFormData.age = this.value"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Height"
+                                            value="${editFormData.height}"
+                                            oninput="editFormData.height = this.value"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Country"
+                                        value="${editFormData.country}"
+                                        oninput="editFormData.country = this.value"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                    />
+                                    <div class="flex gap-2">
+                                        <button onclick="handleProfileSave()" class="flex-1 gradient-button text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="20,6 9,17 4,12"/>
+                                            </svg>
+                                            Save
+                                        </button>
+                                        <button onclick="handleProfileCancel()" class="flex-1 bg-gray-200 text-gray-800 hover:bg-gray-300 px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                                <line x1="6" y1="6" x2="18" y2="18"/>
+                                            </svg>
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="space-y-4">
+                                    <div class="text-center">
+                                        <h3 class="text-xl font-bold text-gray-800 mb-4">${currentUser.name}</h3>
+                                        <div class="space-y-2 text-gray-600">
+                                            <p><span class="font-medium">Age:</span> ${currentUser.age}</p>
+                                            <p><span class="font-medium">Height:</span> ${currentUser.height}</p>
+                                            <p><span class="font-medium">Country:</span> ${currentUser.country}</p>
+                                            <p><span class="font-medium">Email:</span> ${currentUser.email}</p>
+                                        </div>
+                                    </div>
+                                    <button onclick="isEditing = true; render()" class="w-full gradient-button text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                        </svg>
+                                        Edit Profile
+                                    </button>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTransactionHistory() {
+            if (!showTransactionHistory) return '';
+
+            return `
+                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between p-6 border-b">
+                            <h2 class="text-xl font-bold text-gray-800">Transaction History</h2>
+                            <button
+                                onclick="showTransactionHistory = false; render()"
+                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="p-6">
+                            ${transactions.length > 0 ? `
+                                <div class="space-y-4">
+                                    ${transactions.slice().reverse().map(transaction => `
+                                        <div class="border rounded-lg p-4">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <h4 class="font-semibold text-gray-800">${transaction.packageName}</h4>
+                                                <span class="text-sm px-2 py-1 bg-green-100 text-green-800 rounded-full">${transaction.status}</span>
+                                            </div>
+                                            <div class="text-sm text-gray-600">
+                                                <p>Amount: ${transaction.amount}</p>
+                                                <p>Date: ${formatDate(transaction.date)}</p>
+                                                <p>Currency: ${transaction.currency}</p>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : `
+                                <div class="text-center py-8">
+                                    <svg class="text-gray-400 mx-auto mb-4" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14,2 14,8 20,8"/>
+                                        <line x1="16" y1="13" x2="8" y2="13"/>
+                                        <line x1="16" y1="17" x2="8" y2="17"/>
+                                        <polyline points="10,9 9,9 8,9"/>
+                                    </svg>
+                                    <h3 class="text-lg font-semibold text-gray-800 mb-2">No Transactions</h3>
+                                    <p class="text-gray-600">You haven't made any purchases yet</p>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSupport() {
+            if (!showSupport) return '';
+
+            return `
+                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between p-6 border-b">
+                            <h2 class="text-xl font-bold text-gray-800">Support</h2>
+                            <button
+                                onclick="showSupport = false; render()"
+                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="p-6">
+                            <div class="space-y-6">
+                                <div class="text-center">
+                                    <svg class="text-blue-500 mx-auto mb-4" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Need Help?</h3>
+                                    <p class="text-gray-600">We're here to help you with any questions or issues</p>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <div class="border rounded-lg p-4">
+                                        <h4 class="font-semibold text-gray-800 mb-2">Frequently Asked Questions</h4>
+                                        <div class="space-y-2 text-sm text-gray-600">
+                                            <p><strong>Q:</strong> How do I buy credits?</p>
+                                            <p><strong>A:</strong> Click on "Buy Credits" and follow the payment instructions.</p>
+                                            
+                                            <p><strong>Q:</strong> How do unlimited messages work?</p>
+                                            <p><strong>A:</strong> With unlimited messages, you can chat without spending credits for the duration of your subscription.</p>
+                                            
+                                            <p><strong>Q:</strong> How do I update my profile?</p>
+                                            <p><strong>A:</strong> Go to Profile Settings and click "Edit Profile".</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="border rounded-lg p-4">
+                                        <h4 class="font-semibold text-gray-800 mb-2">Contact Support</h4>
+                                        <p class="text-sm text-gray-600 mb-3">
+                                            For additional help, contact our support team:
+                                        </p>
+                                        <div class="space-y-2 text-sm">
+                                            <p><strong>Email:</strong> support@zurilove.com</p>
+                                            <p><strong>Phone:</strong> +1 (555) 123-4567</p>
+                                            <p><strong>Hours:</strong> 24/7 Support</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="border rounded-lg p-4">
+                                        <h4 class="font-semibold text-gray-800 mb-2">App Version</h4>
+                                        <p class="text-sm text-gray-600">Zuri Love v1.0.0</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1893,33 +1840,36 @@
             const alertColors = {
                 success: 'bg-green-50 border-green-200 text-green-800',
                 error: 'bg-red-50 border-red-200 text-red-800',
-                warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
                 info: 'bg-blue-50 border-blue-200 text-blue-800'
             };
 
             const alertIcons = {
-                success: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-600"><polyline points="20,6 9,17 4,12"/></svg>',
-                error: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-600"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-                warning: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-yellow-600"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-                info: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-600"><circle cx="12" cy="12" r="10"/><path d="M12,16v-4"/><path d="M12,8h.01"/></svg>'
+                success: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>',
+                error: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+                info: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
             };
 
             return `
                 <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm">
+                    <div class="bg-white rounded-xl shadow-xl max-w-sm w-full">
                         <div class="p-6">
-                            <div class="flex items-center gap-4 mb-4">
-                                ${alertIcons[alertType]}
-                                <div class="flex-1">
-                                    <p class="text-gray-800">${alertMessage}</p>
+                            <div class="flex items-center gap-3">
+                                <div class="${alertColors[alertType]} p-2 rounded-full">
+                                    ${alertIcons[alertType]}
                                 </div>
+                                <div class="flex-1">
+                                    <p class="text-gray-800 font-medium">${alertMessage}</p>
+                                </div>
+                                <button
+                                    onclick="showAlert = false; render()"
+                                    class="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
                             </div>
-                            <button
-                                onclick="showAlert = false; render()"
-                                class="w-full gradient-button text-white py-2 px-4 rounded-lg font-medium transition-all duration-200"
-                            >
-                                OK
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -1929,41 +1879,55 @@
         // Main render function
         function render() {
             const app = document.getElementById('app');
+            
             let content = '';
-
-            if (currentView === 'auth') {
+            
+            if (!currentUser || currentView === 'auth') {
                 content = renderAuthScreen();
             } else if (currentView === 'main') {
                 content = renderMainScreen();
             } else if (currentView === 'chat') {
                 content = renderChatScreen();
-            } else if (currentView === 'profile') {
-                content = renderProfileScreen();
             }
-
+            
+            // Add modals
             content += renderBuyCreditsModal();
-            content += renderNotificationsModal();
-            content += renderTransactionHistoryModal();
-            content += renderSupportModal();
+            content += renderProfileSettings();
+            content += renderTransactionHistory();
+            content += renderSupport();
             content += renderAlertModal();
-
+            
             app.innerHTML = content;
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('.relative')) {
+                    showCountryDropdown = false;
+                    showCurrencyDropdown = false;
+                    showUserMenu = false;
+                    showNotifications = false;
+                    render();
+                }
+            });
+
+            // Auto-scroll chat to bottom
+            if (currentView === 'chat') {
+                setTimeout(() => {
+                    const chatMessages = document.getElementById('chat-messages');
+                    if (chatMessages) {
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                }, 100);
+            }
         }
 
-        // Initialize the app
+        // Initialize app
         function init() {
-            const storedUser = storage.getCurrentUser();
-            if (storedUser) {
-                currentUser = storedUser;
+            currentUser = getCurrentUser();
+            if (currentUser) {
                 currentView = 'main';
                 initializeApp();
             }
-            
-            const storedMatches = storage.getMatches();
-            if (storedMatches.length === 0) {
-                storage.setMatches(FAKE_MATCHES);
-            }
-            
             render();
         }
 
