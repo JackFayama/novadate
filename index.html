@@ -1,409 +1,1925 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nova Dating</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    html, body {
-      background-color: #111827;
-      color: white;
-      font-family: 'Helvetica', sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    .modal {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: #1f2937;
-      padding: 2rem;
-      border-radius: 1rem;
-      width: 90%;
-      max-width: 400px;
-      z-index: 50;
-    }
-    .modal-bg {
-      position: fixed;
-      inset: 0;
-      background-color: rgba(0, 0, 0, 0.6);
-      z-index: 40;
-    }
-    textarea {
-      resize: none;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zuri Love - Complete Dating Web App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #fce7f3 0%, #f3e8ff 50%, #e0e7ff 100%);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .gradient-button {
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+        }
+        .gradient-button:hover {
+            background: linear-gradient(135deg, #db2777, #7c3aed);
+        }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .notification-badge {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .online-dot {
+            animation: pulse 2s infinite;
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
 </head>
-<body>
-<div class="p-4 max-w-7xl mx-auto">
-  <!-- Fixed Header -->
-  <div class="sticky top-0 z-30 bg-[#111827] pb-2">
-    <div class="flex items-center space-x-3 cursor-pointer mb-4" onclick="openProfileModal()">
-      <img id="userPhoto" src="default.jpg" alt="User" class="w-12 h-12 rounded-full object-cover">
-      <div class="text-white font-bold text-lg" id="userName">Welcome!</div>
-    </div>
+<body class="bg-gray-50">
+    <div id="app"></div>
 
-    <!-- Balance & Credit -->
-    <div class="bg-gray-800 p-4 rounded-xl space-y-2 w-full max-w-[66.66%]">
-      <div class="flex justify-between text-sm">
-        <span>Balance:</span>
-        <span id="balance">$0.00</span>
-      </div>
-      <div class="flex justify-between text-sm">
-        <span>Credit:</span>
-        <span id="credit">0</span>
-      </div>
-      <div class="flex flex-wrap gap-2 mt-3">
-        <button onclick="openDepositModal()" class="bg-green-600 px-4 py-2 rounded-full text-sm">Deposit</button>
-        <button onclick="openWithdrawModal()" class="bg-red-600 px-4 py-2 rounded-full text-sm">Withdraw</button>
-        <button onclick="openTransferModal()" class="bg-blue-600 px-4 py-2 rounded-full text-sm">Transfer</button>
-      </div>
-    </div>
+    <script>
+        // Initialize EmailJS
+        emailjs.init('LMdaXNTSTm33O5BqT');
 
-    <!-- Section Title -->
-    <h2 class="mt-6 mb-4 text-white font-semibold text-lg pl-1">People You May Know</h2>
-  </div>
+        // Global state
+        let currentUser = null;
+        let currentView = 'auth';
+        let selectedMatch = null;
+        let showBuyCredits = false;
+        let showNotification = false;
+        let showUserMenu = false;
+        let currentNotification = null;
+        let matches = [];
+        let notifications = [];
+        let isLogin = true;
+        let showPassword = false;
+        let showCountryDropdown = false;
+        let showCurrencyDropdown = false;
+        let selectedPackage = null;
+        let selectedCurrency = { code: 'USD', name: 'US Dollar', symbol: '$', rate: 1 };
+        let showPayment = false;
+        let showSuccess = false;
+        let transactionId = '';
+        let error = '';
+        let profileImage = '';
+        let isEditing = false;
 
-  <!-- Users Grid -->
-  <div id="userList" class="grid gap-4 md:grid-cols-4 mt-2">
-    <!-- Example User Card -->
-  </div>
-</div>
+        // Form data
+        let formData = {
+            email: '',
+            password: '',
+            name: '',
+            age: '',
+            height: '',
+            country: '',
+            countryCode: '',
+            phoneNumber: '',
+            relationshipStatus: '',
+            lookingFor: '',
+            relationshipType: '',
+            sex: '',
+        };
 
-<!-- Modals -->
-<div id="profileModal" class="hidden modal-bg">
-  <div class="modal">
-    <h2 class="text-lg font-bold mb-4">Edit Profile</h2>
-    <form id="profileForm">
-      <input type="text" id="inputName" placeholder="Your Name" class="w-full mb-2 p-2 rounded text-black" />
-      <input type="number" id="inputAge" placeholder="Age" class="w-full mb-2 p-2 rounded text-black" />
-      <input type="text" id="inputCountry" placeholder="Country" class="w-full mb-2 p-2 rounded text-black" />
-      <input type="text" id="inputHeight" placeholder="Height" class="w-full mb-2 p-2 rounded text-black" />
-      <input type="file" id="inputPhoto" accept="image/*" class="w-full mb-2 p-2 rounded" />
-      <button type="submit" class="bg-blue-600 w-full py-2 mt-2 rounded">Save</button>
-      <button type="button" class="mt-2 text-sm text-gray-300" onclick="closeAllModals()">Cancel</button>
-    </form>
-  </div>
-</div>
+        let editFormData = {
+            name: '',
+            age: '',
+            height: '',
+            country: '',
+        };
 
-<div id="depositModal" class="hidden modal-bg">
-  <div class="modal">
-    <h2 class="text-lg font-bold mb-4">Deposit Funds</h2>
-    <p>Send to till number <strong>1234</strong></p>
-    <input type="text" id="depositCode" placeholder="Enter confirmation code" class="w-full p-2 rounded text-black mt-2" />
-    <input type="number" id="depositAmount" placeholder="Amount" class="w-full p-2 rounded text-black mt-2" />
-    <button onclick="processDeposit()" class="bg-green-600 w-full py-2 mt-2 rounded">Confirm</button>
-    <button class="mt-2 text-sm text-gray-300" onclick="closeAllModals()">Cancel</button>
-  </div>
-</div>
+        // Constants
+        const CURRENCIES = [
+            { code: 'USD', name: 'US Dollar', symbol: '$', rate: 1 },
+            { code: 'EUR', name: 'Euro', symbol: '€', rate: 0.85 },
+            { code: 'GBP', name: 'British Pound', symbol: '£', rate: 0.73 },
+            { code: 'KES', name: 'Kenyan Shilling', symbol: 'KSh', rate: 129.50 },
+            { code: 'NGN', name: 'Nigerian Naira', symbol: '₦', rate: 461.50 },
+            { code: 'ZAR', name: 'South African Rand', symbol: 'R', rate: 18.75 },
+            { code: 'GHS', name: 'Ghanaian Cedi', symbol: '₵', rate: 12.15 },
+            { code: 'UGX', name: 'Ugandan Shilling', symbol: 'USh', rate: 3720 },
+            { code: 'TZS', name: 'Tanzanian Shilling', symbol: 'TSh', rate: 2340 },
+            { code: 'RWF', name: 'Rwandan Franc', symbol: 'RF', rate: 1025 },
+            { code: 'ETB', name: 'Ethiopian Birr', symbol: 'Br', rate: 55.25 },
+            { code: 'EGP', name: 'Egyptian Pound', symbol: 'E£', rate: 30.85 },
+            { code: 'MAD', name: 'Moroccan Dirham', symbol: 'DH', rate: 10.15 },
+            { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 83.25 },
+            { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', rate: 7.25 },
+            { code: 'JPY', name: 'Japanese Yen', symbol: '¥', rate: 149.50 },
+            { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', rate: 1.52 },
+            { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', rate: 1.36 },
+            { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF', rate: 0.88 },
+            { code: 'SEK', name: 'Swedish Krona', symbol: 'kr', rate: 10.85 },
+            { code: 'NOK', name: 'Norwegian Krone', symbol: 'kr', rate: 10.65 },
+            { code: 'DKK', name: 'Danish Krone', symbol: 'kr', rate: 6.85 },
+            { code: 'PLN', name: 'Polish Zloty', symbol: 'zł', rate: 4.15 },
+            { code: 'CZK', name: 'Czech Koruna', symbol: 'Kč', rate: 22.75 },
+            { code: 'HUF', name: 'Hungarian Forint', symbol: 'Ft', rate: 355 },
+            { code: 'RON', name: 'Romanian Leu', symbol: 'lei', rate: 4.65 },
+            { code: 'BGN', name: 'Bulgarian Lev', symbol: 'лв', rate: 1.75 },
+            { code: 'HRK', name: 'Croatian Kuna', symbol: 'kn', rate: 6.85 },
+            { code: 'RUB', name: 'Russian Ruble', symbol: '₽', rate: 92.50 },
+            { code: 'UAH', name: 'Ukrainian Hryvnia', symbol: '₴', rate: 36.85 },
+            { code: 'TRY', name: 'Turkish Lira', symbol: '₺', rate: 27.15 },
+            { code: 'ILS', name: 'Israeli Shekel', symbol: '₪', rate: 3.75 },
+            { code: 'SAR', name: 'Saudi Riyal', symbol: 'SR', rate: 3.75 },
+            { code: 'AED', name: 'UAE Dirham', symbol: 'AED', rate: 3.67 },
+            { code: 'QAR', name: 'Qatari Riyal', symbol: 'QR', rate: 3.64 },
+            { code: 'KWD', name: 'Kuwaiti Dinar', symbol: 'KD', rate: 0.31 },
+            { code: 'BHD', name: 'Bahraini Dinar', symbol: 'BD', rate: 0.38 },
+            { code: 'OMR', name: 'Omani Rial', symbol: 'OMR', rate: 0.38 },
+            { code: 'JOD', name: 'Jordanian Dinar', symbol: 'JD', rate: 0.71 },
+            { code: 'LBP', name: 'Lebanese Pound', symbol: 'L£', rate: 15000 },
+            { code: 'BRL', name: 'Brazilian Real', symbol: 'R$', rate: 5.15 },
+            { code: 'ARS', name: 'Argentine Peso', symbol: '$', rate: 365 },
+            { code: 'CLP', name: 'Chilean Peso', symbol: '$', rate: 885 },
+            { code: 'COP', name: 'Colombian Peso', symbol: '$', rate: 4150 },
+            { code: 'PEN', name: 'Peruvian Sol', symbol: 'S/', rate: 3.75 },
+            { code: 'UYU', name: 'Uruguayan Peso', symbol: '$U', rate: 39.25 },
+            { code: 'MXN', name: 'Mexican Peso', symbol: '$', rate: 17.85 },
+            { code: 'KRW', name: 'South Korean Won', symbol: '₩', rate: 1325 },
+            { code: 'THB', name: 'Thai Baht', symbol: '฿', rate: 35.75 },
+            { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', rate: 1.35 },
+            { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM', rate: 4.65 },
+            { code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp', rate: 15750 },
+            { code: 'PHP', name: 'Philippine Peso', symbol: '₱', rate: 56.25 },
+            { code: 'VND', name: 'Vietnamese Dong', symbol: '₫', rate: 24350 },
+            { code: 'PKR', name: 'Pakistani Rupee', symbol: 'Rs', rate: 285 },
+            { code: 'BDT', name: 'Bangladeshi Taka', symbol: '৳', rate: 110 },
+            { code: 'LKR', name: 'Sri Lankan Rupee', symbol: 'Rs', rate: 325 },
+            { code: 'NPR', name: 'Nepalese Rupee', symbol: 'Rs', rate: 133 },
+            { code: 'AFN', name: 'Afghan Afghani', symbol: '؋', rate: 72.5 },
+            { code: 'IRR', name: 'Iranian Rial', symbol: '﷼', rate: 42000 },
+            { code: 'IQD', name: 'Iraqi Dinar', symbol: 'ع.د', rate: 1310 },
+        ];
 
-<div id="withdrawModal" class="hidden modal-bg">
-  <div class="modal">
-    <h2 class="text-lg font-bold mb-4">Withdraw Funds</h2>
-    <input type="text" id="withdrawCode" placeholder="Enter security code" class="w-full p-2 rounded text-black mt-2" />
-    <input type="number" id="withdrawAmount" placeholder="Amount" class="w-full p-2 rounded text-black mt-2" />
-    <button onclick="processWithdraw()" class="bg-red-600 w-full py-2 mt-2 rounded">Confirm</button>
-    <button class="mt-2 text-sm text-gray-300" onclick="closeAllModals()">Cancel</button>
-  </div>
-</div>
+        const COUNTRIES = [
+            { name: 'Afghanistan', code: 'AF', dialCode: '+93' },
+            { name: 'Albania', code: 'AL', dialCode: '+355' },
+            { name: 'Algeria', code: 'DZ', dialCode: '+213' },
+            { name: 'Argentina', code: 'AR', dialCode: '+54' },
+            { name: 'Australia', code: 'AU', dialCode: '+61' },
+            { name: 'Austria', code: 'AT', dialCode: '+43' },
+            { name: 'Bangladesh', code: 'BD', dialCode: '+880' },
+            { name: 'Belgium', code: 'BE', dialCode: '+32' },
+            { name: 'Brazil', code: 'BR', dialCode: '+55' },
+            { name: 'Canada', code: 'CA', dialCode: '+1' },
+            { name: 'China', code: 'CN', dialCode: '+86' },
+            { name: 'Denmark', code: 'DK', dialCode: '+45' },
+            { name: 'Egypt', code: 'EG', dialCode: '+20' },
+            { name: 'Ethiopia', code: 'ET', dialCode: '+251' },
+            { name: 'France', code: 'FR', dialCode: '+33' },
+            { name: 'Germany', code: 'DE', dialCode: '+49' },
+            { name: 'Ghana', code: 'GH', dialCode: '+233' },
+            { name: 'India', code: 'IN', dialCode: '+91' },
+            { name: 'Indonesia', code: 'ID', dialCode: '+62' },
+            { name: 'Iran', code: 'IR', dialCode: '+98' },
+            { name: 'Iraq', code: 'IQ', dialCode: '+964' },
+            { name: 'Israel', code: 'IL', dialCode: '+972' },
+            { name: 'Italy', code: 'IT', dialCode: '+39' },
+            { name: 'Japan', code: 'JP', dialCode: '+81' },
+            { name: 'Jordan', code: 'JO', dialCode: '+962' },
+            { name: 'Kenya', code: 'KE', dialCode: '+254' },
+            { name: 'Kuwait', code: 'KW', dialCode: '+965' },
+            { name: 'Lebanon', code: 'LB', dialCode: '+961' },
+            { name: 'Malaysia', code: 'MY', dialCode: '+60' },
+            { name: 'Mexico', code: 'MX', dialCode: '+52' },
+            { name: 'Morocco', code: 'MA', dialCode: '+212' },
+            { name: 'Netherlands', code: 'NL', dialCode: '+31' },
+            { name: 'Nigeria', code: 'NG', dialCode: '+234' },
+            { name: 'Norway', code: 'NO', dialCode: '+47' },
+            { name: 'Pakistan', code: 'PK', dialCode: '+92' },
+            { name: 'Philippines', code: 'PH', dialCode: '+63' },
+            { name: 'Poland', code: 'PL', dialCode: '+48' },
+            { name: 'Qatar', code: 'QA', dialCode: '+974' },
+            { name: 'Russia', code: 'RU', dialCode: '+7' },
+            { name: 'Rwanda', code: 'RW', dialCode: '+250' },
+            { name: 'Saudi Arabia', code: 'SA', dialCode: '+966' },
+            { name: 'Singapore', code: 'SG', dialCode: '+65' },
+            { name: 'South Africa', code: 'ZA', dialCode: '+27' },
+            { name: 'South Korea', code: 'KR', dialCode: '+82' },
+            { name: 'Spain', code: 'ES', dialCode: '+34' },
+            { name: 'Sri Lanka', code: 'LK', dialCode: '+94' },
+            { name: 'Sweden', code: 'SE', dialCode: '+46' },
+            { name: 'Switzerland', code: 'CH', dialCode: '+41' },
+            { name: 'Tanzania', code: 'TZ', dialCode: '+255' },
+            { name: 'Thailand', code: 'TH', dialCode: '+66' },
+            { name: 'Turkey', code: 'TR', dialCode: '+90' },
+            { name: 'Uganda', code: 'UG', dialCode: '+256' },
+            { name: 'Ukraine', code: 'UA', dialCode: '+380' },
+            { name: 'United Arab Emirates', code: 'AE', dialCode: '+971' },
+            { name: 'United Kingdom', code: 'GB', dialCode: '+44' },
+            { name: 'United States', code: 'US', dialCode: '+1' },
+            { name: 'Vietnam', code: 'VN', dialCode: '+84' },
+        ];
 
-<div id="transferModal" class="hidden modal-bg">
-  <div class="modal">
-    <h2 class="text-lg font-bold mb-4">Transfer to Credit</h2>
-    <p class="text-sm mb-2">Every $1 will convert to 3 credits</p>
-    <input type="number" id="transferAmount" placeholder="Amount in $" class="w-full p-2 rounded text-black mt-2" />
-    <button onclick="processTransfer()" class="bg-blue-600 w-full py-2 mt-3 rounded">Transfer</button>
-    <button class="mt-2 text-sm text-gray-300" onclick="closeAllModals()">Cancel</button>
-  </div>
-</div>
+        const CREDIT_PACKAGES = [
+            {
+                id: '1',
+                name: '10 Credits',
+                credits: 10,
+                priceUSD: 1,
+                isUnlimited: false,
+            },
+            {
+                id: '2',
+                name: 'Unlimited Messages (1 Month)',
+                credits: 0,
+                priceUSD: 5,
+                isUnlimited: true,
+                duration: 30,
+            },
+            {
+                id: '3',
+                name: 'Unlimited Messages (1 Month Premium)',
+                credits: 0,
+                priceUSD: 10,
+                isUnlimited: true,
+                duration: 30,
+            },
+        ];
 
-<div id="messageModal" class="hidden modal-bg">
-  <div class="modal">
-    <h2 id="messageModalTitle" class="text-lg font-bold mb-2">Notice</h2>
-    <p id="messageModalText" class="text-sm"></p>
-    <button class="mt-4 bg-gray-700 px-4 py-2 rounded" onclick="closeAllModals()">OK</button>
-  </div>
-</div>
+        const FAKE_MATCHES = [
+            {
+                id: '1',
+                name: 'Emma Rodriguez',
+                age: 26,
+                country: 'Spain',
+                sex: 'female',
+                profileImage: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: true,
+                lastMessage: 'Hey there! How are you?',
+                unreadCount: 2,
+                lastActivity: Date.now() - 300000,
+                hasLiked: false,
+            },
+            {
+                id: '2',
+                name: 'Sophie Chen',
+                age: 24,
+                country: 'Canada',
+                sex: 'female',
+                profileImage: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: true,
+                lastMessage: 'Nice to meet you!',
+                unreadCount: 1,
+                lastActivity: Date.now() - 600000,
+                hasLiked: true,
+            },
+            {
+                id: '3',
+                name: 'Isabella Santos',
+                age: 28,
+                country: 'Brazil',
+                sex: 'female',
+                profileImage: 'https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: false,
+                lastMessage: 'Hope to hear from you soon!',
+                unreadCount: 0,
+                lastActivity: Date.now() - 1800000,
+                hasLiked: false,
+            },
+            {
+                id: '4',
+                name: 'Anna Kowalski',
+                age: 25,
+                country: 'Poland',
+                sex: 'female',
+                profileImage: 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: true,
+                lastMessage: 'Looking forward to talking!',
+                unreadCount: 3,
+                lastActivity: Date.now() - 900000,
+                hasLiked: true,
+            },
+            {
+                id: '5',
+                name: 'Maya Patel',
+                age: 27,
+                country: 'India',
+                sex: 'female',
+                profileImage: 'https://images.pexels.com/photos/1102341/pexels-photo-1102341.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: true,
+                lastMessage: 'Hope you\'re having a great day!',
+                unreadCount: 1,
+                lastActivity: Date.now() - 1200000,
+                hasLiked: false,
+            },
+            {
+                id: '6',
+                name: 'Yuki Tanaka',
+                age: 23,
+                country: 'Japan',
+                sex: 'female',
+                profileImage: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: false,
+                lastMessage: 'Thanks for the match!',
+                unreadCount: 0,
+                lastActivity: Date.now() - 2400000,
+                hasLiked: true,
+            },
+            // Male profiles
+            {
+                id: '7',
+                name: 'James Wilson',
+                age: 29,
+                country: 'United States',
+                sex: 'male',
+                profileImage: 'https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: true,
+                lastMessage: 'Hey! How\'s your day going?',
+                unreadCount: 1,
+                lastActivity: Date.now() - 450000,
+                hasLiked: false,
+            },
+            {
+                id: '8',
+                name: 'Carlos Martinez',
+                age: 31,
+                country: 'Mexico',
+                sex: 'male',
+                profileImage: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: true,
+                lastMessage: 'Nice profile!',
+                unreadCount: 2,
+                lastActivity: Date.now() - 750000,
+                hasLiked: true,
+            },
+            {
+                id: '9',
+                name: 'Ahmed Hassan',
+                age: 27,
+                country: 'Egypt',
+                sex: 'male',
+                profileImage: 'https://images.pexels.com/photos/1043473/pexels-photo-1043473.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: false,
+                lastMessage: 'Looking forward to getting to know you',
+                unreadCount: 0,
+                lastActivity: Date.now() - 1500000,
+                hasLiked: false,
+            },
+            {
+                id: '10',
+                name: 'David Kim',
+                age: 26,
+                country: 'South Korea',
+                sex: 'male',
+                profileImage: 'https://images.pexels.com/photos/1043472/pexels-photo-1043472.jpeg?auto=compress&cs=tinysrgb&w=300&h=400&fit=crop',
+                isOnline: true,
+                lastMessage: 'Hi there! Nice to meet you',
+                unreadCount: 1,
+                lastActivity: Date.now() - 1050000,
+                hasLiked: true,
+            },
+        ];
 
-<script>
-  // Populate Users
-  const exampleUsers = [
-  { name: "Emily, 24", country: "USA", img: "https://www.instagram.com/p/DKKkLicNt_b/" },
-  { name: "James, 30", country: "UK", img: "https://randomuser.me/api/portraits/men/11.jpg" },
-  { name: "Priya, 26", country: "India", img: "https://randomuser.me/api/portraits/women/18.jpg" },
-  { name: "Zhang, 28", country: "China", img: "https://randomuser.me/api/portraits/men/22.jpg" },
-  { name: "Liam, 32", country: "Australia", img: "https://randomuser.me/api/portraits/men/44.jpg" },
-  { name: "Ayşe, 27", country: "Turkey", img: "https://randomuser.me/api/portraits/women/29.jpg" },
-  { name: "Sophia, 29", country: "South Africa", img: "https://randomuser.me/api/portraits/women/33.jpg" },
-  { name: "David, 25", country: "USA", img: "https://randomuser.me/api/portraits/men/15.jpg" },
-  { name: "Chloe, 31", country: "UK", img: "https://randomuser.me/api/portraits/women/16.jpg" },
-  { name: "Rahul, 27", country: "India", img: "https://randomuser.me/api/portraits/men/19.jpg" },
-  { name: "Chen, 30", country: "China", img: "https://randomuser.me/api/portraits/men/23.jpg" },
-  { name: "Isla, 28", country: "Australia", img: "https://randomuser.me/api/portraits/women/37.jpg" },
-  { name: "Mert, 30", country: "Turkey", img: "https://randomuser.me/api/portraits/men/26.jpg" },
-  { name: "Thabo, 26", country: "South Africa", img: "https://randomuser.me/api/portraits/men/35.jpg" },
-  { name: "Olivia, 24", country: "USA", img: "https://randomuser.me/api/portraits/women/10.jpg" },
-  { name: "Harry, 34", country: "UK", img: "https://randomuser.me/api/portraits/men/17.jpg" },
-  { name: "Ananya, 29", country: "India", img: "https://randomuser.me/api/portraits/women/19.jpg" },
-  { name: "Wang, 33", country: "China", img: "https://randomuser.me/api/portraits/men/28.jpg" },
-  { name: "Zoe, 26", country: "Australia", img: "https://randomuser.me/api/portraits/women/28.jpg" },
-  { name: "Elif, 25", country: "Turkey", img: "https://randomuser.me/api/portraits/women/30.jpg" },
-  // ... continue with 80 
-    { name: "Olivia, 25", country: "USA", img: "https://randomuser.me/api/portraits/women/1.jpg" },
-    { name: "Liam, 30", country: "UK", img: "https://randomuser.me/api/portraits/men/2.jpg" },
-    { name: "Ava, 28", country: "Australia", img: "https://randomuser.me/api/portraits/women/3.jpg" },
-    { name: "Arjun, 29", country: "India", img: "https://randomuser.me/api/portraits/men/4.jpg" },
-    { name: "Mei, 26", country: "China", img: "https://randomuser.me/api/portraits/women/5.jpg" },
-    { name: "Thabo, 33", country: "South Africa", img: "https://randomuser.me/api/portraits/men/6.jpg" },
-    { name: "Elif, 24", country: "Turkey", img: "https://randomuser.me/api/portraits/women/7.jpg" },
-    { name: "Noah, 32", country: "USA", img: "https://randomuser.me/api/portraits/men/8.jpg" },
-    { name: "Emily, 27", country: "UK", img: "https://randomuser.me/api/portraits/women/9.jpg" },
-    { name: "James, 34", country: "Australia", img: "https://randomuser.me/api/portraits/men/10.jpg" },
-    { name: "Priya, 25", country: "India", img: "https://randomuser.me/api/portraits/women/11.jpg" },
-    { name: "Li Wei, 28", country: "China", img: "https://randomuser.me/api/portraits/men/12.jpg" },
-    { name: "Zanele, 31", country: "South Africa", img: "https://randomuser.me/api/portraits/women/13.jpg" },
-    { name: "Kemal, 29", country: "Turkey", img: "https://randomuser.me/api/portraits/men/14.jpg" },
-    { name: "Sophia, 26", country: "USA", img: "https://randomuser.me/api/portraits/women/15.jpg" },
-    { name: "Harry, 35", country: "UK", img: "https://randomuser.me/api/portraits/men/16.jpg" },
-    { name: "Charlotte, 23", country: "Australia", img: "https://randomuser.me/api/portraits/women/17.jpg" },
-    { name: "Ravi, 27", country: "India", img: "https://randomuser.me/api/portraits/men/18.jpg" },
-    { name: "Chen, 30", country: "China", img: "https://randomuser.me/api/portraits/men/19.jpg" },
-    { name: "Nandi, 28", country: "South Africa", img: "https://randomuser.me/api/portraits/women/20.jpg" },
-    { name: "Aylin, 25", country: "Turkey", img: "https://randomuser.me/api/portraits/women/21.jpg" },
-    { name: "Jackson, 31", country: "USA", img: "https://randomuser.me/api/portraits/men/22.jpg" },
-    { name: "Chloe, 30", country: "UK", img: "https://randomuser.me/api/portraits/women/23.jpg" },
-    { name: "Hunter, 26", country: "Australia", img: "https://randomuser.me/api/portraits/men/24.jpg" },
-    { name: "Neha, 24", country: "India", img: "https://randomuser.me/api/portraits/women/25.jpg" },
-    { name: "Xiao, 29", country: "China", img: "https://randomuser.me/api/portraits/women/26.jpg" },
-    { name: "Sipho, 32", country: "South Africa", img: "https://randomuser.me/api/portraits/men/27.jpg" },
-    { name: "Deniz, 33", country: "Turkey", img: "https://randomuser.me/api/portraits/men/28.jpg" },
-    { name: "Emma, 29", country: "USA", img: "https://randomuser.me/api/portraits/women/29.jpg" },
-    { name: "George, 27", country: "UK", img: "https://randomuser.me/api/portraits/men/30.jpg" },
-    { name: "Zoe, 25", country: "Australia", img: "https://randomuser.me/api/portraits/women/31.jpg" },
-    { name: "Amit, 26", country: "India", img: "https://randomuser.me/api/portraits/men/32.jpg" },
-    { name: "Yue, 31", country: "China", img: "https://randomuser.me/api/portraits/women/33.jpg" },
-    { name: "Lerato, 26", country: "South Africa", img: "https://randomuser.me/api/portraits/women/34.jpg" },
-    { name: "Mert, 30", country: "Turkey", img: "https://randomuser.me/api/portraits/men/35.jpg" },
-    { name: "Mia, 30", country: "USA", img: "https://randomuser.me/api/portraits/women/36.jpg" },
-    { name: "Oscar, 33", country: "UK", img: "https://randomuser.me/api/portraits/men/37.jpg" },
-    { name: "Isla, 22", country: "Australia", img: "https://randomuser.me/api/portraits/women/38.jpg" },
-    { name: "Karan, 28", country: "India", img: "https://randomuser.me/api/portraits/men/39.jpg" },
-    { name: "Min, 27", country: "China", img: "https://randomuser.me/api/portraits/women/40.jpg" },
-    { name: "Boitumelo, 29", country: "South Africa", img: "https://randomuser.me/api/portraits/women/41.jpg" },
-    { name: "Serkan, 31", country: "Turkey", img: "https://randomuser.me/api/portraits/men/42.jpg" },
- 
+        // Storage functions
+        const storage = {
+            getCurrentUser: () => {
+                const user = localStorage.getItem('zuri_current_user');
+                return user ? JSON.parse(user) : null;
+            },
+            setCurrentUser: (user) => {
+                if (user) {
+                    localStorage.setItem('zuri_current_user', JSON.stringify(user));
+                } else {
+                    localStorage.removeItem('zuri_current_user');
+                }
+            },
+            getUsers: () => {
+                const users = localStorage.getItem('zuri_users');
+                return users ? JSON.parse(users) : [];
+            },
+            setUsers: (users) => {
+                localStorage.setItem('zuri_users', JSON.stringify(users));
+            },
+            getMatches: () => {
+                const matches = localStorage.getItem('zuri_matches');
+                return matches ? JSON.parse(matches) : [];
+            },
+            setMatches: (matches) => {
+                localStorage.setItem('zuri_matches', JSON.stringify(matches));
+            },
+            getNotifications: () => {
+                const notifications = localStorage.getItem('zuri_notifications');
+                return notifications ? JSON.parse(notifications) : [];
+            },
+            setNotifications: (notifications) => {
+                localStorage.setItem('zuri_notifications', JSON.stringify(notifications));
+            },
+        };
 
-  { name: "Logan Garcia, 40", country: "UK", img: "https://randomuser.me/api/portraits/women/51.jpg" },
-  { name: "Elijah Brown, 38", country: "Turkey", img: "https://randomuser.me/api/portraits/men/93.jpg" },
-  { name: "Benjamin Smith, 23", country: "USA", img: "https://randomuser.me/api/portraits/men/73.jpg" },
-  { name: "Charlotte Smith, 38", country: "Turkey", img: "https://randomuser.me/api/portraits/women/79.jpg" },
-  { name: "Logan Smith, 31", country: "Canada", img: "https://randomuser.me/api/portraits/men/38.jpg" },
-  { name: "Charlotte Brown, 22", country: "Canada", img: "https://randomuser.me/api/portraits/men/8.jpg" },
-  { name: "Logan Martinez, 31", country: "USA", img: "https://randomuser.me/api/portraits/women/8.jpg" },
-  { name: "Emma Davis, 27", country: "Turkey", img: "https://randomuser.me/api/portraits/women/2.jpg" },
-  { name: "Charlotte Rodriguez, 21", country: "Canada", img: "https://randomuser.me/api/portraits/men/82.jpg" },
-  { name: "Charlotte Garcia, 32", country: "UK", img: "https://randomuser.me/api/portraits/men/35.jpg" },
+        // Utility functions
+        function hasCreditsOrUnlimited() {
+            if (currentUser.hasUnlimitedMessages && currentUser.unlimitedUntil && currentUser.unlimitedUntil > Date.now()) {
+                return true;
+            }
+            return currentUser.credits > 0;
+        }
 
-    
-    { name: "Noah Thomas, 36", country: "UK", img: "https://randomuser.me/api/portraits/women/1.jpg" },
-    { name: "Harper White, 27", country: "South Africa", img: "https://randomuser.me/api/portraits/men/2.jpg" },
-    { name: "Lucas Taylor, 22", country: "UK", img: "https://randomuser.me/api/portraits/women/3.jpg" },
-    { name: "Mason Jackson, 34", country: "Turkey", img: "https://randomuser.me/api/portraits/men/4.jpg" },
-    { name: "Liam Thomas, 29", country: "Turkey", img: "https://randomuser.me/api/portraits/women/5.jpg" },
-    { name: "Levi Anderson, 26", country: "USA", img: "https://randomuser.me/api/portraits/men/6.jpg" },
-    { name: "Henry Smith, 30", country: "Canada", img: "https://randomuser.me/api/portraits/women/7.jpg" },
-    { name: "Jack Martin, 23", country: "UK", img: "https://randomuser.me/api/portraits/men/8.jpg" },
-    { name: "Ethan Johnson, 38", country: "Australia", img: "https://randomuser.me/api/portraits/women/9.jpg" },
-    { name: "Emma White, 35", country: "USA", img: "https://randomuser.me/api/portraits/men/10.jpg" },
-    { name: "Olivia Lewis, 31", country: "Canada", img: "https://randomuser.me/api/portraits/women/11.jpg" },
-    { name: "Amelia Scott, 24", country: "Australia", img: "https://randomuser.me/api/portraits/men/12.jpg" },
-    { name: "Isla Moore, 28", country: "South Africa", img: "https://randomuser.me/api/portraits/women/13.jpg" },
-    { name: "Sophia Hill, 33", country: "USA", img: "https://randomuser.me/api/portraits/men/14.jpg" },
-    { name: "James Evans, 25", country: "Canada", img: "https://randomuser.me/api/portraits/women/15.jpg" },
-    { name: "Benjamin Carter, 37", country: "UK", img: "https://randomuser.me/api/portraits/men/16.jpg" },
-    { name: "Charlotte Green, 29", country: "Turkey", img: "https://randomuser.me/api/portraits/women/17.jpg" },
-    { name: "Ella Baker, 32", country: "USA", img: "https://randomuser.me/api/portraits/men/18.jpg" },
-    { name: "Ava Wright, 26", country: "Canada", img: "https://randomuser.me/api/portraits/women/19.jpg" },
-    { name: "Mia Adams, 23", country: "Australia", img: "https://randomuser.me/api/portraits/men/20.jpg" },
-    { name: "Emily Nelson, 39", country: "UK", img: "https://randomuser.me/api/portraits/women/21.jpg" },
-    { name: "Grace Turner, 28", country: "South Africa", img: "https://randomuser.me/api/portraits/men/22.jpg" },
-    { name: "Chloe Phillips, 30", country: "Canada", img: "https://randomuser.me/api/portraits/women/23.jpg" },
-    { name: "Zoe Campbell, 27", country: "Turkey", img: "https://randomuser.me/api/portraits/men/24.jpg" },
-    { name: "Sophie Parker, 34", country: "USA", img: "https://randomuser.me/api/portraits/women/25.jpg" },
-    { name: "Lily Mitchell, 31", country: "Australia", img: "https://randomuser.me/api/portraits/men/26.jpg" },
-    { name: "Aiden Roberts, 29", country: "South Africa", img: "https://randomuser.me/api/portraits/women/27.jpg" },
-    { name: "Jackson James, 35", country: "Canada", img: "https://randomuser.me/api/portraits/men/28.jpg" },
-    { name: "Ella Watson, 26", country: "UK", img: "https://randomuser.me/api/portraits/women/29.jpg" },
-    { name: "Luna Brooks, 33", country: "Turkey", img: "https://randomuser.me/api/portraits/men/30.jpg" },
-    { name: "Scarlett Gray, 22", country: "USA", img: "https://randomuser.me/api/portraits/women/31.jpg" },
-    { name: "Victoria Kelly, 36", country: "Australia", img: "https://randomuser.me/api/portraits/men/32.jpg" },
-    { name: "Aria Bennett, 25", country: "South Africa", img: "https://randomuser.me/api/portraits/women/33.jpg" },
-    { name: "Penelope Cox, 37", country: "Canada", img: "https://randomuser.me/api/portraits/men/34.jpg" },
-    { name: "Lillian Ward, 30", country: "UK", img: "https://randomuser.me/api/portraits/women/35.jpg" },
-    { name: "Addison Peterson, 29", country: "Turkey", img: "https://randomuser.me/api/portraits/men/36.jpg" },
-    { name: "Aubrey Hughes, 27", country: "USA", img: "https://randomuser.me/api/portraits/women/37.jpg" },
-    { name: "Nora Price, 31", country: "Canada", img: "https://randomuser.me/api/portraits/men/38.jpg" },
-    { name: "Eleanor Richardson, 24", country: "Australia", img: "https://randomuser.me/api/portraits/women/39.jpg" },
-    { name: "Hazel Simmons, 33", country: "UK", img: "https://randomuser.me/api/portraits/men/40.jpg" },
-    { name: "Aurora Foster, 35", country: "South Africa", img: "https://randomuser.me/api/portraits/women/41.jpg" }
-    // You can continue this pattern to add up to 100 profiles
-  ];
+        function getLocalPrice() {
+            if (!selectedPackage) return 0;
+            return (selectedPackage.priceUSD * selectedCurrency.rate).toFixed(2);
+        }
 
-  const userList = document.getElementById("userList");
-  exampleUsers.forEach(user => {
-    const div = document.createElement("div");
-    div.className = "flex items-start bg-gray-800 p-3 rounded-xl space-x-3";
-    div.innerHTML = `
-      <img src="${user.img}" class="w-12 h-12 rounded-full object-cover">
-      <div class="flex-1">
-        <div class="flex items-center space-x-2">
-          <span class="font-semibold">${user.name}</span>
-          <span class="text-green-400">●</span>
-        </div>
-        <div class="text-sm text-gray-400">${user.country}</div>
-        <div class="mt-2 flex items-center space-x-2">
-          <textarea rows="1" placeholder="Type message..." oninput="growTextArea(this)" class="w-full p-2 text-sm rounded text-black bg-white"></textarea>
-          <button onclick="sendMessage(this)" class="text-blue-500 text-xl">➤</button>
-        </div>
-      </div>`;
-    userList.appendChild(div);
-  });
+        // Email functions
+        async function sendRegistrationEmail(userData) {
+            try {
+                const templateParams = {
+                    user_name: userData.name,
+                    user_email: userData.email,
+                    user_age: userData.age,
+                    user_height: userData.height,
+                    user_country: userData.country,
+                    user_phone: userData.countryCode + userData.phoneNumber,
+                    user_sex: userData.sex,
+                    relationship_status: userData.relationshipStatus,
+                    looking_for: userData.lookingFor,
+                    relationship_type: userData.relationshipType,
+                };
 
-  function growTextArea(el) {
-    el.style.height = "auto";
-    el.style.height = (el.scrollHeight) + "px";
-  }
+                await emailjs.send(
+                    'service_7e51cwp',
+                    'template_sf4bm9j',
+                    templateParams,
+                    'LMdaXNTSTm33O5BqT'
+                );
+            } catch (error) {
+                console.error('Failed to send registration email:', error);
+            }
+        }
 
-  function sendMessage(btn) {
-    const credit = parseFloat(localStorage.getItem("credit")) || 0;
-    if (credit < 1) return showMessage("Notice", "Insufficient credit. Deposit to message.");
-    const msg = btn.previousElementSibling.value.trim();
-    if (!msg) return;
-    btn.previousElementSibling.value = "";
-    localStorage.setItem("credit", (credit - 1).toFixed(2));
-    updateDisplayedValues();
-    showMessage("Success", "Message sent!");
-  }
+        async function sendPaymentEmail(packageData, amount, transactionId) {
+            try {
+                const templateParams = {
+                    user_name: currentUser.name,
+                    user_email: currentUser.email,
+                    user_phone: currentUser.countryCode + currentUser.phoneNumber,
+                    package_name: packageData.name,
+                    amount_paid: `${selectedCurrency.symbol}${amount}`,
+                    transaction_id: transactionId,
+                    currency: selectedCurrency.code,
+                };
 
-  function openProfileModal() {
-    document.getElementById("profileModal").classList.remove("hidden");
-  }
+                await emailjs.send(
+                    'service_7e51cwp',
+                    'template_6rl4ss2',
+                    templateParams,
+                    'LMdaXNTSTm33O5BqT'
+                );
+            } catch (error) {
+                console.error('Failed to send payment email:', error);
+            }
+        }
 
-  function openDepositModal() {
-    closeAllModals();
-    document.getElementById("depositModal").classList.remove("hidden");
-  }
+        // Event handlers
+        function handleImageUpload(e) {
+            const file = e.target.files?.[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    profileImage = e.target?.result;
+                    render();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
 
-  function openWithdrawModal() {
-    closeAllModals();
-    document.getElementById("withdrawModal").classList.remove("hidden");
-  }
+        function handleCountrySelect(country) {
+            formData.country = country.name;
+            formData.countryCode = country.dialCode;
+            showCountryDropdown = false;
+            render();
+        }
 
-  function openTransferModal() {
-    closeAllModals();
-    document.getElementById("transferModal").classList.remove("hidden");
-  }
+        function handleCurrencySelect(currency) {
+            selectedCurrency = currency;
+            showCurrencyDropdown = false;
+            render();
+        }
 
-  function closeAllModals() {
-    document.querySelectorAll(".modal-bg").forEach(modal => modal.classList.add("hidden"));
-  }
+        function handlePackageSelect(pkg) {
+            selectedPackage = pkg;
+            showPayment = true;
+            render();
+        }
 
-  function processDeposit() {
-    const code = document.getElementById("depositCode").value;
-    const amount = parseFloat(document.getElementById("depositAmount").value);
-    if (code === "1234" && amount > 0) {
-      let balance = parseFloat(localStorage.getItem("balance")) || 0;
-      let credit = parseFloat(localStorage.getItem("credit")) || 0;
-      balance += amount;
-      credit += Math.floor(amount / 5);
-      localStorage.setItem("balance", balance.toFixed(2));
-      localStorage.setItem("credit", credit.toFixed(2));
-      updateDisplayedValues();
-      closeAllModals();
-      showMessage("Success", "Deposit successful!");
-    } else {
-      showMessage("Error", "Invalid code or amount.");
-    }
-  }
+        async function handleSubmit(e) {
+            e.preventDefault();
+            error = '';
 
-  function processWithdraw() {
-    const code = document.getElementById("withdrawCode").value;
-    const amount = parseFloat(document.getElementById("withdrawAmount").value);
-    let balance = parseFloat(localStorage.getItem("balance")) || 0;
-    if (code === "1234" && amount > 0 && amount <= balance) {
-      balance -= amount;
-      localStorage.setItem("balance", balance.toFixed(2));
-      updateDisplayedValues();
-      closeAllModals();
-      showMessage("Success", "Withdraw successful!");
-    } else {
-      showMessage("Error", "Invalid withdrawal.");
-    }
-  }
+            // Trim email and password to remove whitespace
+            const trimmedEmail = formData.email.trim();
+            const trimmedPassword = formData.password.trim();
 
-  function processTransfer() {
-    const amount = parseFloat(document.getElementById("transferAmount").value);
-    let balance = parseFloat(localStorage.getItem("balance")) || 0;
-    let credit = parseInt(localStorage.getItem("credit")) || 0;
+            // Validate that email is not empty after trimming
+            if (!trimmedEmail) {
+                error = 'Email address is required';
+                render();
+                return;
+            }
 
-    if (isNaN(amount) || amount <= 0) {
-      showMessage("Invalid Amount", "Please enter a valid amount.");
-      return;
-    }
+            if (!trimmedPassword) {
+                error = 'Password is required';
+                render();
+                return;
+            }
 
-    if (amount > balance) {
-      showMessage("Insufficient Funds", "You don't have enough balance to transfer this amount.");
-      return;
-    }
+            const users = storage.getUsers();
 
-    balance -= amount;
-    credit += Math.floor(amount * 3); // $1 = 3 credits
+            if (isLogin) {
+                // Login logic
+                const user = users.find(u => u.email === trimmedEmail && u.password === trimmedPassword);
+                if (user) {
+                    storage.setCurrentUser(user);
+                    currentUser = user;
+                    currentView = 'main';
+                    initializeApp();
+                } else {
+                    error = 'Invalid email or password';
+                }
+            } else {
+                // Signup logic
+                if (users.find(u => u.email === trimmedEmail)) {
+                    error = 'Email already exists';
+                    render();
+                    return;
+                }
 
-    localStorage.setItem("balance", balance.toFixed(2));
-    localStorage.setItem("credit", credit);
+                const newUser = {
+                    id: Date.now().toString(),
+                    email: trimmedEmail,
+                    password: trimmedPassword,
+                    name: formData.name.trim(),
+                    age: parseInt(formData.age),
+                    height: formData.height.trim(),
+                    country: formData.country,
+                    countryCode: formData.countryCode,
+                    phoneNumber: formData.phoneNumber.trim(),
+                    relationshipStatus: formData.relationshipStatus,
+                    lookingFor: formData.lookingFor,
+                    relationshipType: formData.relationshipType,
+                    sex: formData.sex,
+                    profileImage,
+                    credits: 5,
+                    isOnline: true,
+                };
 
-    updateDisplayedValues(); // Fixed: correct function name
-    closeAllModals();
-    showMessage("Success", "Funds transferred to credit!");
-  }
+                users.push(newUser);
+                storage.setUsers(users);
+                storage.setCurrentUser(newUser);
+                currentUser = newUser;
+                
+                // Send registration email
+                await sendRegistrationEmail(newUser);
+                
+                currentView = 'main';
+                initializeApp();
+            }
+            render();
+        }
 
-  function updateDisplayedValues() {
-    const balance = parseFloat(localStorage.getItem("balance")) || 0;
-    const credit = parseFloat(localStorage.getItem("credit")) || 0;
+        function handleOpenChat(match) {
+            selectedMatch = match;
+            currentView = 'chat';
+            render();
+        }
 
-    document.getElementById("balance").innerText = "$" + balance.toFixed(2);
-    document.getElementById("credit").innerText = credit.toFixed(2);
-    document.getElementById("userName").innerText = localStorage.getItem("name") || "Welcome!";
-    document.getElementById("userPhoto").src = localStorage.getItem("photo") || "default.jpg";
-  }
+        function handleSendMessage(matchId, message) {
+            if (hasCreditsOrUnlimited() && !currentUser.hasUnlimitedMessages) {
+                currentUser.credits = currentUser.credits - 1;
+                updateCurrentUser(currentUser);
+            }
+        }
 
-  function showMessage(title, message) {
-    document.getElementById("messageModalTitle").innerText = title || "Notice";
-    document.getElementById("messageModalText").innerText = message || "";
-    document.getElementById("messageModal").classList.remove("hidden");
-  }
+        function handleLikeMatch(matchId) {
+            if (!hasCreditsOrUnlimited()) {
+                showBuyCredits = true;
+                render();
+                return;
+            }
 
-  document.getElementById("profileForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    const name = document.getElementById("inputName").value;
-    const photoInput = document.getElementById("inputPhoto");
-    if (photoInput.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        localStorage.setItem("photo", e.target.result);
-        updateDisplayedValues();
-      };
-      reader.readAsDataURL(photoInput.files[0]);
-    }
-    localStorage.setItem("name", name);
-    closeAllModals();
-    updateDisplayedValues();
-  });
+            // Find the match and toggle like
+            const matchIndex = matches.findIndex(m => m.id === matchId);
+            if (matchIndex !== -1) {
+                matches[matchIndex].hasLiked = !matches[matchIndex].hasLiked;
+                storage.setMatches(matches);
+                
+                // Deduct credit if not unlimited
+                if (!currentUser.hasUnlimitedMessages) {
+                    currentUser.credits = currentUser.credits - 1;
+                    updateCurrentUser(currentUser);
+                }
+                
+                render();
+            }
+        }
 
-  window.addEventListener("load", updateDisplayedValues);
-</script>
+        async function handleBuyCredits(packageId, transactionId) {
+            // Simple validation - in real app, this would verify with payment provider
+            if (transactionId.length >= 8) {
+                let updatedUser = { ...currentUser };
+                
+                if (packageId === '1') {
+                    updatedUser.credits = currentUser.credits + 10;
+                } else if (packageId === '2' || packageId === '3') {
+                    updatedUser.hasUnlimitedMessages = true;
+                    updatedUser.unlimitedUntil = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 days
+                }
+                
+                updateCurrentUser(updatedUser);
+                return true;
+            }
+            return false;
+        }
 
+        async function handlePayment() {
+            if (!transactionId.trim()) {
+                error = 'Please enter transaction ID';
+                render();
+                return;
+            }
+
+            error = '';
+            const success = await handleBuyCredits(selectedPackage.id, transactionId);
+            
+            if (success) {
+                // Send payment email
+                await sendPaymentEmail(selectedPackage, getLocalPrice(), transactionId);
+                
+                showSuccess = true;
+                transactionId = '';
+                setTimeout(() => {
+                    showSuccess = false;
+                    showPayment = false;
+                    selectedPackage = null;
+                    showBuyCredits = false;
+                    render();
+                }, 3000);
+            } else {
+                error = 'Invalid transaction ID. Please check and try again.';
+            }
+            render();
+        }
+
+        function handleNotificationAction(action) {
+            switch (action) {
+                case 'view_message':
+                case 'view_like':
+                    if (hasCreditsOrUnlimited()) {
+                        const matchId = currentNotification?.data?.matchId;
+                        const match = matches.find(m => m.id === matchId);
+                        if (match) {
+                            handleOpenChat(match);
+                        }
+                    } else {
+                        showBuyCredits = true;
+                    }
+                    break;
+                case 'buy_credits':
+                    showBuyCredits = true;
+                    break;
+            }
+            showNotification = false;
+            render();
+        }
+
+        function updateCurrentUser(user) {
+            currentUser = user;
+            storage.setCurrentUser(user);
+            
+            // Also update the user in the users array
+            const users = storage.getUsers();
+            const updatedUsers = users.map(u => u.id === user.id ? user : u);
+            storage.setUsers(updatedUsers);
+        }
+
+        function handleLogout() {
+            storage.setCurrentUser(null);
+            currentUser = null;
+            currentView = 'auth';
+            render();
+        }
+
+        function handleProfileSave() {
+            const updatedUser = {
+                ...currentUser,
+                name: editFormData.name,
+                age: parseInt(editFormData.age),
+                height: editFormData.height,
+                country: editFormData.country,
+                profileImage,
+            };
+            updateCurrentUser(updatedUser);
+            isEditing = false;
+            render();
+        }
+
+        function handleProfileCancel() {
+            editFormData = {
+                name: currentUser.name,
+                age: currentUser.age.toString(),
+                height: currentUser.height,
+                country: currentUser.country,
+            };
+            profileImage = currentUser.profileImage || '';
+            isEditing = false;
+            render();
+        }
+
+        // Initialize app
+        function initializeApp() {
+            // Filter matches based on user preferences
+            const filteredMatches = FAKE_MATCHES.filter(match => match.sex === currentUser.lookingFor);
+            
+            // Sort matches: online first, then by last activity, then those with messages
+            const sortedMatches = filteredMatches.sort((a, b) => {
+                if (a.isOnline && !b.isOnline) return -1;
+                if (!a.isOnline && b.isOnline) return 1;
+                if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
+                if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
+                return b.lastActivity - a.lastActivity;
+            });
+
+            matches = sortedMatches;
+            storage.setMatches(sortedMatches);
+
+            // Initialize notifications
+            const storedNotifications = storage.getNotifications();
+            notifications = storedNotifications;
+
+            // Only create notifications if there are matches available
+            if (sortedMatches.length > 0) {
+                // Simulate notifications at intervals
+                const notificationIntervals = [36000, 44000, 52000, 61000]; // 36s, 44s, 52s, 61s
+                
+                notificationIntervals.forEach((interval, index) => {
+                    setTimeout(() => {
+                        const randomMatch = sortedMatches[Math.floor(Math.random() * sortedMatches.length)];
+                        const notificationTypes = [
+                            {
+                                type: 'message',
+                                title: 'New Message!',
+                                message: `${randomMatch.name} sent you a message. Buy credits to unlock it.`,
+                            },
+                            {
+                                type: 'like',
+                                title: 'Someone likes you!',
+                                message: `${randomMatch.name} liked your profile. Buy credits to see who.`,
+                            }
+                        ];
+                        
+                        const notification = notificationTypes[Math.floor(Math.random() * notificationTypes.length)];
+                        
+                        const newNotification = {
+                            id: Date.now().toString() + index,
+                            type: notification.type,
+                            title: notification.title,
+                            message: notification.message,
+                            timestamp: Date.now(),
+                            isRead: false,
+                            data: { matchId: randomMatch.id },
+                        };
+                        
+                        notifications = [...notifications, newNotification];
+                        storage.setNotifications(notifications);
+                        
+                        currentNotification = newNotification;
+                        showNotification = true;
+                        render();
+                    }, interval);
+                });
+            }
+
+            // Shuffle matches every 2 minutes
+            setInterval(() => {
+                const onlineWithMessages = matches.filter(m => m.isOnline || m.unreadCount > 0);
+                const others = matches.filter(m => !m.isOnline && m.unreadCount === 0);
+                
+                // Shuffle others array
+                for (let i = others.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [others[i], others[j]] = [others[j], others[i]];
+                }
+                
+                matches = [...onlineWithMessages, ...others];
+                render();
+            }, 120000); // 2 minutes
+        }
+
+        // Render functions
+        function renderAuthScreen() {
+            return `
+                <div class="min-h-screen gradient-bg flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                        <div class="p-8">
+                            <div class="text-center mb-8">
+                                <div class="flex items-center justify-center mb-4">
+                                    <svg class="text-pink-500 mr-2" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                    </svg>
+                                    <h1 class="text-3xl font-bold gradient-text">Zuri Love</h1>
+                                </div>
+                                <p class="text-gray-600">
+                                    ${isLogin ? 'Welcome back!' : 'Find your perfect match'}
+                                </p>
+                            </div>
+
+                            ${error ? `
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                                    <p class="text-red-600 text-sm">${error}</p>
+                                </div>
+                            ` : ''}
+
+                            <form onsubmit="handleSubmit(event)" class="space-y-4">
+                                <input
+                                    type="email"
+                                    placeholder="Email"
+                                    value="${formData.email}"
+                                    oninput="formData.email = this.value"
+                                    required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                />
+
+                                <div class="relative">
+                                    <input
+                                        type="${showPassword ? 'text' : 'password'}"
+                                        placeholder="Password"
+                                        value="${formData.password}"
+                                        oninput="formData.password = this.value"
+                                        required
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                    />
+                                    <button
+                                        type="button"
+                                        onclick="showPassword = !showPassword; render()"
+                                        class="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                                    >
+                                        ${showPassword ? 
+                                            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>' :
+                                            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
+                                        }
+                                    </button>
+                                </div>
+
+                                ${!isLogin ? `
+                                    <input
+                                        type="text"
+                                        placeholder="Full Name"
+                                        value="${formData.name}"
+                                        oninput="formData.name = this.value"
+                                        required
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                    />
+
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <input
+                                            type="number"
+                                            placeholder="Age"
+                                            value="${formData.age}"
+                                            oninput="formData.age = this.value"
+                                            required
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Height"
+                                            value="${formData.height}"
+                                            oninput="formData.height = this.value"
+                                            required
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        />
+                                    </div>
+
+                                    <!-- Country Dropdown -->
+                                    <div class="relative">
+                                        <button
+                                            type="button"
+                                            onclick="showCountryDropdown = !showCountryDropdown; render()"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-left flex items-center justify-between"
+                                        >
+                                            <span class="${formData.country ? 'text-gray-800' : 'text-gray-500'}">
+                                                ${formData.country || 'Select Country'}
+                                            </span>
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6,9 12,15 18,9"></polyline>
+                                            </svg>
+                                        </button>
+                                        
+                                        ${showCountryDropdown ? `
+                                            <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                                ${COUNTRIES.map(country => `
+                                                    <button
+                                                        type="button"
+                                                        onclick="handleCountrySelect(${JSON.stringify(country).replace(/"/g, '&quot;')})"
+                                                        class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center justify-between"
+                                                    >
+                                                        <span>${country.name}</span>
+                                                        <span class="text-gray-500 text-sm">${country.dialCode}</span>
+                                                    </button>
+                                                `).join('')}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+
+                                    <!-- Phone Number -->
+                                    <div class="flex gap-2">
+                                        <div class="w-20">
+                                            <input
+                                                type="text"
+                                                placeholder="+1"
+                                                value="${formData.countryCode}"
+                                                oninput="formData.countryCode = this.value"
+                                                required
+                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                            />
+                                        </div>
+                                        <div class="flex-1">
+                                            <input
+                                                type="tel"
+                                                placeholder="Phone Number"
+                                                value="${formData.phoneNumber}"
+                                                oninput="formData.phoneNumber = this.value"
+                                                required
+                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <!-- Sex -->
+                                    <select
+                                        value="${formData.sex}"
+                                        onchange="formData.sex = this.value"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        required
+                                    >
+                                        <option value="">Select Your Sex</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                    </select>
+
+                                    <!-- Looking For -->
+                                    <select
+                                        value="${formData.lookingFor}"
+                                        onchange="formData.lookingFor = this.value"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        required
+                                    >
+                                        <option value="">Looking For</option>
+                                        <option value="male">Men</option>
+                                        <option value="female">Women</option>
+                                    </select>
+
+                                    <!-- Relationship Status -->
+                                    <select
+                                        value="${formData.relationshipStatus}"
+                                        onchange="formData.relationshipStatus = this.value"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        required
+                                    >
+                                        <option value="">Relationship Status</option>
+                                        <option value="single">Single</option>
+                                        <option value="divorced">Divorced</option>
+                                        <option value="widowed">Widowed</option>
+                                        <option value="separated">Separated</option>
+                                    </select>
+
+                                    <!-- Relationship Type -->
+                                    <select
+                                        value="${formData.relationshipType}"
+                                        onchange="formData.relationshipType = this.value"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                        required
+                                    >
+                                        <option value="">Relationship Type</option>
+                                        <option value="friendship">Friendship</option>
+                                        <option value="short-term">Short-term Relationship</option>
+                                        <option value="long-term">Long-term Relationship</option>
+                                        <option value="marriage">Marriage</option>
+                                    </select>
+
+                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-pink-500 transition-colors">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onchange="handleImageUpload(event)"
+                                            class="hidden"
+                                            id="profile-image"
+                                        />
+                                        <label for="profile-image" class="cursor-pointer">
+                                            ${profileImage ? `
+                                                <img
+                                                    src="${profileImage}"
+                                                    alt="Profile"
+                                                    class="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
+                                                />
+                                            ` : `
+                                                <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                    <polyline points="17,8 12,3 7,8"/>
+                                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                                </svg>
+                                            `}
+                                            <p class="text-sm text-gray-600">
+                                                ${profileImage ? 'Change photo' : 'Upload profile photo'}
+                                            </p>
+                                        </label>
+                                    </div>
+                                ` : ''}
+
+                                <button type="submit" class="w-full gradient-button text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl">
+                                    ${isLogin ? 'Sign In' : 'Create Account'}
+                                </button>
+                            </form>
+
+                            <div class="mt-6 text-center">
+                                <p class="text-gray-600">
+                                    ${isLogin ? "Don't have an account?" : "Already have an account?"}
+                                    <button
+                                        onclick="isLogin = !isLogin; render()"
+                                        class="text-pink-500 hover:text-pink-600 ml-1 font-medium"
+                                    >
+                                        ${isLogin ? 'Sign Up' : 'Sign In'}
+                                    </button>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMainScreen() {
+            const unreadNotifications = notifications.filter(n => !n.isRead).length;
+            
+            return `
+                <div class="min-h-screen bg-gray-50">
+                    <!-- Header -->
+                    <div class="bg-white shadow-sm sticky top-0 z-10">
+                        <div class="max-w-6xl mx-auto px-4 py-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <svg class="text-pink-500 mr-2" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                    </svg>
+                                    <h1 class="text-2xl font-bold gradient-text whitespace-nowrap">Zuri Love</h1>
+                                </div>
+                                
+                                <div class="flex items-center gap-4">
+                                    <!-- Desktop view -->
+                                    <div class="hidden md:flex items-center gap-4">
+                                        <div class="flex items-center gap-2 gradient-button text-white px-4 py-2 rounded-full">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                                <line x1="1" y1="10" x2="23" y2="10"/>
+                                            </svg>
+                                            <span class="font-semibold">
+                                                ${currentUser.hasUnlimitedMessages && currentUser.unlimitedUntil && currentUser.unlimitedUntil > Date.now() 
+                                                    ? '∞' 
+                                                    : currentUser.credits
+                                                }
+                                            </span>
+                                        </div>
+                                        
+                                        <button
+                                            onclick="showBuyCredits = true; render()"
+                                            class="p-2 bg-green-500 hover:bg-green-600 text-white rounded-full transition-colors"
+                                            title="Buy Credits"
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                                <line x1="1" y1="10" x2="23" y2="10"/>
+                                            </svg>
+                                        </button>
+                                        
+                                        <button
+                                            onclick="showNotification = true; render()"
+                                            class="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors relative"
+                                            title="Notifications"
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                                            </svg>
+                                            ${unreadNotifications > 0 ? `
+                                                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-badge">
+                                                    ${unreadNotifications}
+                                                </span>
+                                            ` : ''}
+                                        </button>
+                                        
+                                        <button
+                                            onclick="currentView = 'profile'; render()"
+                                            class="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full transition-colors"
+                                            title="Profile"
+                                        >
+                                            ${currentUser.profileImage ? `
+                                                <img
+                                                    src="${currentUser.profileImage}"
+                                                    alt="Profile"
+                                                    class="w-5 h-5 rounded-full object-cover"
+                                                />
+                                            ` : `
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                                    <circle cx="12" cy="7" r="4"/>
+                                                </svg>
+                                            `}
+                                        </button>
+                                        
+                                        <button
+                                            onclick="handleLogout()"
+                                            class="p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors"
+                                            title="Logout"
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                                <polyline points="16,17 21,12 16,7"/>
+                                                <line x1="21" y1="12" x2="9" y2="12"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <!-- Mobile view -->
+                                    <div class="md:hidden flex items-center gap-3">
+                                        <button
+                                            onclick="showNotification = true; render()"
+                                            class="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors relative"
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                                            </svg>
+                                            ${unreadNotifications > 0 ? `
+                                                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-badge">
+                                                    ${unreadNotifications}
+                                                </span>
+                                            ` : ''}
+                                        </button>
+                                        
+                                        <button
+                                            onclick="showUserMenu = !showUserMenu; render()"
+                                            class="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-full transition-colors relative"
+                                        >
+                                            ${currentUser.profileImage ? `
+                                                <img
+                                                    src="${currentUser.profileImage}"
+                                                    alt="Profile"
+                                                    class="w-5 h-5 rounded-full object-cover"
+                                                />
+                                            ` : `
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                                    <circle cx="12" cy="7" r="4"/>
+                                                </svg>
+                                            `}
+                                        </button>
+
+                                        <!-- Mobile User Menu -->
+                                        ${showUserMenu ? `
+                                            <div class="absolute top-16 right-4 bg-white rounded-lg shadow-xl border p-2 min-w-48 z-50">
+                                                <div class="flex items-center gap-2 p-3 border-b">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-pink-500">
+                                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                                        <line x1="1" y1="10" x2="23" y2="10"/>
+                                                    </svg>
+                                                    <span class="font-semibold">
+                                                        Credits: ${currentUser.hasUnlimitedMessages && currentUser.unlimitedUntil && currentUser.unlimitedUntil > Date.now() 
+                                                            ? 'Unlimited' 
+                                                            : currentUser.credits
+                                                        }
+                                                    </span>
+                                                </div>
+                                                
+                                                <button
+                                                    onclick="showBuyCredits = true; showUserMenu = false; render()"
+                                                    class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                                        <line x1="1" y1="10" x2="23" y2="10"/>
+                                                    </svg>
+                                                    Buy Credits
+                                                </button>
+                                                
+                                                <button
+                                                    onclick="currentView = 'profile'; showUserMenu = false; render()"
+                                                    class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <circle cx="12" cy="12" r="3"/>
+                                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                                    </svg>
+                                                    Profile Settings
+                                                </button>
+                                                
+                                                <button
+                                                    onclick="showUserMenu = false; render()"
+                                                    class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <polyline points="1,4 1,10 7,10"/>
+                                                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                                                    </svg>
+                                                    Transaction History
+                                                </button>
+                                                
+                                                <button
+                                                    onclick="showUserMenu = false; render()"
+                                                    class="w-full flex items-center gap-2 p-3 hover:bg-gray-100 rounded"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <circle cx="12" cy="12" r="10"/>
+                                                        <path d="M9,9h0a3,3,0,0,1,6,0c0,2-3,3-3,3"/>
+                                                        <path d="M12 17h.01"/>
+                                                    </svg>
+                                                    Support
+                                                </button>
+                                                
+                                                <div class="border-t pt-2">
+                                                    <button
+                                                        onclick="handleLogout(); showUserMenu = false;"
+                                                        class="w-full flex items-center gap-2 p-3 hover:bg-red-50 text-red-600 rounded"
+                                                    >
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                                            <polyline points="16,17 21,12 16,7"/>
+                                                            <line x1="21" y1="12" x2="9" y2="12"/>
+                                                        </svg>
+                                                        Logout
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="max-w-6xl mx-auto px-4 py-8">
+                        <div class="mb-8">
+                            <h2 class="text-3xl font-bold text-gray-800 mb-2">Your Matches</h2>
+                            <p class="text-gray-600">
+                                ${matches.length} people are waiting to meet you
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${matches.map(match => `
+                                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                                    <div class="relative">
+                                        <img
+                                            src="${match.profileImage}"
+                                            alt="${match.name}"
+                                            class="w-full h-48 object-cover"
+                                        />
+                                        ${match.isOnline ? `
+                                            <div class="absolute top-3 right-3 w-3 h-3 bg-green-500 rounded-full border-2 border-white online-dot"></div>
+                                        ` : ''}
+                                        ${match.unreadCount > 0 ? `
+                                            <div class="absolute top-3 left-3 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
+                                                ${match.unreadCount}
+                                            </div>
+                                        ` : ''}
+                                        ${match.hasLiked ? `
+                                            <div class="absolute bottom-3 right-3 bg-pink-500 text-white rounded-full p-2">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                                </svg>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    
+                                    <div class="p-4">
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-1">${match.name}</h3>
+                                        <p class="text-sm text-gray-600 mb-3">${match.age} • ${match.country}</p>
+                                        
+                                        ${match.lastMessage ? `
+                                            <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                                                <p class="text-sm text-gray-600 line-clamp-2">${match.lastMessage}</p>
+                                            </div>
+                                        ` : ''}
+                                        
+                                        <div class="flex gap-2">
+                                            <button
+                                                onclick="handleOpenChat(${JSON.stringify(match).replace(/"/g, '&quot;')})"
+                                                class="flex-1 gradient-button text-white py-2 px-4 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                ${hasCreditsOrUnlimited() ? `
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                                    </svg>
+                                                    Chat
+                                                ` : `
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                                        <circle cx="12" cy="16" r="1"/>
+                                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                                    </svg>
+                                                    Unlock Chat
+                                                `}
+                                            </button>
+                                            <button
+                                                onclick="handleLikeMatch('${match.id}')"
+                                                class="p-2 ${match.hasLiked ? 'bg-pink-500' : 'bg-gray-200'} ${match.hasLiked ? 'text-white' : 'text-gray-600'} rounded-lg hover:opacity-80 transition-all"
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="${match.hasLiked ? 'white' : 'none'}" stroke="currentColor" stroke-width="2">
+                                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Overlay for mobile menu -->
+                    ${showUserMenu ? `
+                        <div 
+                            class="fixed inset-0 bg-black bg-opacity-25 z-40 md:hidden"
+                            onclick="showUserMenu = false; render()"
+                        ></div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function renderChatScreen() {
+            return `
+                <div class="min-h-screen bg-gray-50 flex flex-col">
+                    <!-- Header -->
+                    <div class="bg-white shadow-sm border-b">
+                        <div class="max-w-md mx-auto flex items-center p-4">
+                            <button
+                                onclick="currentView = 'main'; render()"
+                                class="p-2 hover:bg-gray-100 rounded-full transition-colors mr-3"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="15,18 9,12 15,6"/>
+                                </svg>
+                            </button>
+                            <div class="flex items-center flex-1">
+                                <div class="relative">
+                                    <img
+                                        src="${selectedMatch.profileImage}"
+                                        alt="${selectedMatch.name}"
+                                        class="w-10 h-10 rounded-full object-cover"
+                                    />
+                                    ${selectedMatch.isOnline ? `
+                                        <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                                    ` : ''}
+                                </div>
+                                <div class="ml-3">
+                                    <h2 class="font-semibold text-gray-800">${selectedMatch.name}</h2>
+                                    <p class="text-sm text-gray-600">
+                                        ${selectedMatch.isOnline ? 'Online' : 'Offline'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Messages -->
+                    <div class="flex-1 max-w-md mx-auto w-full p-4">
+                        ${!hasCreditsOrUnlimited() ? `
+                            <div class="flex flex-col items-center justify-center h-full text-center">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400 mb-4">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                    <circle cx="12" cy="16" r="1"/>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                </svg>
+                                <h3 class="text-lg font-semibold text-gray-800 mb-2">
+                                    Messages are locked
+                                </h3>
+                                <p class="text-gray-600 mb-6">
+                                    You need credits to send and view messages
+                                </p>
+                                <button
+                                    onclick="showBuyCredits = true; render()"
+                                    class="gradient-button text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                        <line x1="1" y1="10" x2="23" y2="10"/>
+                                    </svg>
+                                    Buy Credits
+                                </button>
+                            </div>
+                        ` : `
+                            <div class="space-y-4">
+                                <!-- Sample messages -->
+                                <div class="flex justify-end">
+                                    <div class="gradient-button text-white px-4 py-2 rounded-2xl max-w-xs">
+                                        <p class="text-sm">Hey! Nice to meet you</p>
+                                        <p class="text-xs opacity-75 mt-1">12:34 PM</p>
+                                    </div>
+                                </div>
+                                <div class="flex justify-start">
+                                    <div class="bg-white border px-4 py-2 rounded-2xl max-w-xs">
+                                        <p class="text-sm text-gray-800">${selectedMatch.lastMessage}</p>
+                                        <p class="text-xs text-gray-500 mt-1">12:35 PM</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- Message Input -->
+                    ${hasCreditsOrUnlimited() ? `
+                        <div class="bg-white border-t p-4 max-w-md mx-auto w-full">
+                            <div class="flex items-center gap-3">
+                                <input
+                                    type="text"
+                                    placeholder="Type a message..."
+                                    class="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                />
+                                <button
+                                    onclick="handleSendMessage('${selectedMatch.id}', 'message')"
+                                    class="p-2 gradient-button text-white rounded-full hover:opacity-90 transition-all"
+                                >
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="22" y1="2" x2="11" y2="13"/>
+                                        <polygon points="22,2 15,22 11,13 2,9 22,2"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function renderProfileScreen() {
+            return `
+                <div class="min-h-screen gradient-bg p-4">
+                    <div class="max-w-md mx-auto">
+                        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                            <div class="relative h-48 gradient-button">
+                                <button
+                                    onclick="currentView = 'main'; render()"
+                                    class="absolute top-4 left-4 p-2 bg-white bg-opacity-20 rounded-full text-white hover:bg-opacity-30 transition-all"
+                                >
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                                <button
+                                    onclick="isEditing = !isEditing; if (isEditing) { editFormData = { name: currentUser.name, age: currentUser.age.toString(), height: currentUser.height, country: currentUser.country }; profileImage = currentUser.profileImage || ''; } render()"
+                                    class="absolute top-4 right-4 p-2 bg-white bg-opacity-20 rounded-full text-white hover:bg-opacity-30 transition-all"
+                                >
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div class="relative px-6 pb-6">
+                                <div class="absolute -top-16 left-1/2 transform -translate-x-1/2">
+                                    <div class="relative">
+                                        ${currentUser.profileImage || profileImage ? `
+                                            <img
+                                                src="${profileImage || currentUser.profileImage}"
+                                                alt="Profile"
+                                                class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover"
+                                            />
+                                        ` : `
+                                            <div class="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gray-200 flex items-center justify-center">
+                                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400">
+                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                                    <circle cx="12" cy="7" r="4"/>
+                                                </svg>
+                                            </div>
+                                        `}
+                                        ${isEditing ? `
+                                            <label
+                                                for="profile-image-edit"
+                                                class="absolute bottom-0 right-0 p-2 bg-pink-500 rounded-full text-white cursor-pointer hover:bg-pink-600 transition-colors"
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                    <polyline points="17,8 12,3 7,8"/>
+                                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                                </svg>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onchange="handleImageUpload(event)"
+                                                    class="hidden"
+                                                    id="profile-image-edit"
+                                                />
+                                            </label>
+                                        ` : ''}
+                                    </div>
+                                </div>
+
+                                <div class="pt-20 text-center">
+                                    ${isEditing ? `
+                                        <div class="space-y-4">
+                                            <input
+                                                type="text"
+                                                placeholder="Full Name"
+                                                value="${editFormData.name}"
+                                                oninput="editFormData.name = this.value"
+                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                            />
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <input
+                                                    type="number"
+                                                    placeholder="Age"
+                                                    value="${editFormData.age}"
+                                                    oninput="editFormData.age = this.value"
+                                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Height"
+                                                    value="${editFormData.height}"
+                                                    oninput="editFormData.height = this.value"
+                                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                                />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                placeholder="Country"
+                                                value="${editFormData.country}"
+                                                oninput="editFormData.country = this.value"
+                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                            />
+                                            <div class="flex gap-2">
+                                                <button
+                                                    onclick="handleProfileSave()"
+                                                    class="flex-1 gradient-button text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <polyline points="20,6 9,17 4,12"/>
+                                                    </svg>
+                                                    Save
+                                                </button>
+                                                <button
+                                                    onclick="handleProfileCancel()"
+                                                    class="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium transition-all duration-200 hover:bg-gray-300 flex items-center justify-center gap-2"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                                    </svg>
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ` : `
+                                        <div>
+                                            <h2 class="text-2xl font-bold text-gray-800 mb-2">${currentUser.name}</h2>
+                                            <div class="space-y-2 text-gray-600">
+                                                <p><span class="font-medium">Age:</span> ${currentUser.age}</p>
+                                                <p><span class="font-medium">Height:</span> ${currentUser.height}</p>
+                                                <p><span class="font-medium">Country:</span> ${currentUser.country}</p>
+                                                <p><span class="font-medium">Email:</span> ${currentUser.email}</p>
+                                            </div>
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderBuyCreditsModal() {
+            if (!showBuyCredits) return '';
+
+            return `
+                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div class="flex items-center justify-between p-6 border-b">
+                            <h2 class="text-xl font-bold text-gray-800">Buy Credits</h2>
+                            <button
+                                onclick="showBuyCredits = false; showPayment = false; showSuccess = false; selectedPackage = null; error = ''; transactionId = ''; render()"
+                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="p-6">
+                            ${showSuccess ? `
+                                <div class="text-center py-8">
+                                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-600">
+                                            <polyline points="20,6 9,17 4,12"/>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-800 mb-2">
+                                        Payment Successful!
+                                    </h3>
+                                    <p class="text-gray-600">
+                                        ${selectedPackage?.isUnlimited 
+                                            ? 'Unlimited messages activated for 1 month!' 
+                                            : `${selectedPackage?.credits} credits have been added to your account`
+                                        }
+                                    </p>
+                                </div>
+                            ` : showPayment && selectedPackage ? `
+                                <div class="space-y-6">
+                                    <div class="text-center">
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-2">
+                                            Complete Payment
+                                        </h3>
+                                        <div class="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-lg">
+                                            <p class="font-semibold text-gray-800">${selectedPackage.name}</p>
+                                            <p class="text-2xl font-bold text-pink-600">
+                                                ${selectedCurrency.symbol}${getLocalPrice()}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                        <h4 class="font-semibold text-blue-800 mb-2">Payment Instructions</h4>
+                                        <p class="text-blue-700 text-sm mb-2">
+                                            Send <strong>${selectedCurrency.symbol}${getLocalPrice()}</strong> to M-Pesa Till Number:
+                                        </p>
+                                        <div class="bg-blue-100 p-3 rounded text-center">
+                                            <p class="text-xl font-bold text-blue-800">12345678</p>
+                                        </div>
+                                    </div>
+
+                                    ${error ? `
+                                        <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                                            <p class="text-red-600 text-sm">${error}</p>
+                                        </div>
+                                    ` : ''}
+
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Transaction ID
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter M-Pesa transaction ID"
+                                                value="${transactionId}"
+                                                oninput="transactionId = this.value"
+                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                                            />
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                Enter the transaction ID you received from M-Pesa
+                                            </p>
+                                        </div>
+
+                                        <div class="flex gap-3">
+                                            <button
+                                                onclick="handlePayment()"
+                                                class="flex-1 gradient-button text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+                                            >
+                                                Confirm Payment
+                                            </button>
+                                            <button
+                                                onclick="showPayment = false; render()"
+                                                class="bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium transition-all duration-200 hover:bg-gray-300"
+                                            >
+                                                Back
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="space-y-6">
+                                    <div class="text-center">
+                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-pink-500 mx-auto mb-4">
+                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                            <line x1="1" y1="10" x2="23" y2="10"/>
+                                        </svg>
+                                        <h3 class="text-lg font-semibold text-gray-800 mb-2">
+                                            Choose Your Package
+                                        </h3>
+                                    </div>
+
+                                    <!-- Currency Selector -->
+                                    <div class="relative">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            Select Currency
+                                        </label>
+                                        <button
+                                            onclick="showCurrencyDropdown = !showCurrencyDropdown; render()"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-left flex items-center justify-between"
+                                        >
+                                            <span>${selectedCurrency.symbol} ${selectedCurrency.name}</span>
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6,9 12,15 18,9"/>
+                                            </svg>
+                                        </button>
+                                        
+                                        ${showCurrencyDropdown ? `
+                                            <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                                ${CURRENCIES.map(currency => `
+                                                    <button
+                                                        onclick="handleCurrencySelect(${JSON.stringify(currency).replace(/"/g, '&quot;')})"
+                                                        class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center justify-between"
+                                                    >
+                                                        <span>${currency.symbol} ${currency.name}</span>
+                                                        <span class="text-gray-500 text-sm">${currency.code}</span>
+                                                    </button>
+                                                `).join('')}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+
+                                    <!-- Credit Packages -->
+                                    <div class="space-y-3">
+                                        ${CREDIT_PACKAGES.map(pkg => `
+                                            <div
+                                                onclick="handlePackageSelect(${JSON.stringify(pkg).replace(/"/g, '&quot;')})"
+                                                class="bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-lg border hover:border-pink-300 transition-colors cursor-pointer"
+                                            >
+                                                <div class="flex items-center justify-between">
+                                                    <div>
+                                                        <p class="font-semibold text-gray-800">${pkg.name}</p>
+                                                        <p class="text-sm text-gray-600">
+                                                            ${pkg.isUnlimited 
+                                                                ? `Unlimited messages for ${pkg.duration} days`
+                                                                : `${pkg.credits} credits for messaging`
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <p class="font-bold text-lg text-pink-600">
+                                                            ${selectedCurrency.symbol}${(pkg.priceUSD * selectedCurrency.rate).toFixed(2)}
+                                                        </p>
+                                                        <p class="text-xs text-gray-500">
+                                                            $${pkg.priceUSD} USD
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+
+                                    <div class="flex gap-3">
+                                        <button
+                                            onclick="showBuyCredits = false; render()"
+                                            class="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium transition-all duration-200 hover:bg-gray-300"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderNotificationModal() {
+            if (!showNotification || !currentNotification) return '';
+
+            const getIcon = () => {
+                switch (currentNotification.type) {
+                    case 'message':
+                        return '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+                    case 'like':
+                        return '<svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" class="text-pink-500"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+                    case 'credit':
+                        return '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>';
+                    default:
+                        return '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+                }
+            };
+
+            const getActionButton = () => {
+                switch (currentNotification.type) {
+                    case 'message':
+                        return `
+                            <button
+                                onclick="handleNotificationAction('view_message')"
+                                class="gradient-button text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+                            >
+                                View Message
+                            </button>
+                        `;
+                    case 'like':
+                        return `
+                            <button
+                                onclick="handleNotificationAction('view_like')"
+                                class="gradient-button text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+                            >
+                                View Profile
+                            </button>
+                        `;
+                    case 'credit':
+                        return `
+                            <button
+                                onclick="handleNotificationAction('buy_credits')"
+                                class="gradient-button text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+                            >
+                                Buy Credits
+                            </button>
+                        `;
+                    default:
+                        return '';
+                }
+            };
+
+            return `
+                <div class="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+                        <div class="flex items-center justify-between p-6 border-b">
+                            <h2 class="text-xl font-bold text-gray-800">Notification</h2>
+                            <button
+                                onclick="showNotification = false; render()"
+                                class="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="p-6">
+                            <div class="text-center py-4">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    ${getIcon()}
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-800 mb-2">
+                                    ${currentNotification.title}
+                                </h3>
+                                <p class="text-gray-600 mb-6">${currentNotification.message}</p>
+                                
+                                <div class="flex gap-3">
+                                    ${getActionButton()}
+                                    <button
+                                        onclick="showNotification = false; render()"
+                                        class="bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium transition-all duration-200 hover:bg-gray-300"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Main render function
+        function render() {
+            const app = document.getElementById('app');
+            let content = '';
+
+            if (currentView === 'auth') {
+                content = renderAuthScreen();
+            } else if (currentView === 'main') {
+                content = renderMainScreen();
+            } else if (currentView === 'chat') {
+                content = renderChatScreen();
+            } else if (currentView === 'profile') {
+                content = renderProfileScreen();
+            }
+
+            content += renderBuyCreditsModal();
+            content += renderNotificationModal();
+
+            app.innerHTML = content;
+        }
+
+        // Initialize the app
+        function init() {
+            // Check if user is already logged in
+            const storedUser = storage.getCurrentUser();
+            if (storedUser) {
+                currentUser = storedUser;
+                currentView = 'main';
+                initializeApp();
+            }
+            
+            // Initialize fake matches if not already stored
+            const storedMatches = storage.getMatches();
+            if (storedMatches.length === 0) {
+                storage.setMatches(FAKE_MATCHES);
+            }
+            
+            render();
+        }
+
+        // Start the app
+        init();
+    </script>
 </body>
 </html>
